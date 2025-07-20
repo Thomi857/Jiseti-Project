@@ -7,8 +7,8 @@ class Config:
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY') or 'super-secret-jwt-key-fallback' 
     JWT_ACCESS_TOKEN_EXPIRES = 3600 
 
-    # --- ADDED FOR FILE UPLOADS ---
-    # Define the folder where uploaded files will be stored.
+
+
     # It creates a 'static/uploads' directory relative to the app's root.
 
     UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
