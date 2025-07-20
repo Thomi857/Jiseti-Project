@@ -20,18 +20,14 @@ def register():
     name = data.get('name')
     email = data.get('email')
     password = data.get('password')
-
     if not all([name, email, password]):
         return jsonify({'msg': 'Missing required fields'}), 400
-
     if User.query.filter_by(email=email).first():
         return jsonify({'msg': 'Email already registered'}), 409
-
     user = User(name=name, email=email)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
-
     return jsonify({'msg': 'User registered successfully'}), 201
 
 @main.route('/login', methods=['POST'])
@@ -39,7 +35,6 @@ def login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-
     user = User.query.filter_by(email=email).first()
     if user and user.check_password(password):
         access_token = create_access_token(identity=user.id, additional_claims={'role': user.role.value})
@@ -49,11 +44,11 @@ def login():
 @main.route('/reports', methods=['POST'])
 @jwt_required()
 def create_report():
-    subject = request.form.get('subject')  # Changed from 'title'
+    subject = request.form.get('subject', '').strip()  # Default to empty string and strip
     description = request.form.get('description')
     report_type = request.form.get('type')
-    latitude = request.form.get('lat')
-    longitude = request.form.get('lng')
+    latitude = request.form.get('latitude')
+    longitude = request.form.get('longitude')
     media_file = request.files.get('media')
     user_id = get_jwt_identity()
 
@@ -65,10 +60,8 @@ def create_report():
 
     if not all([subject, description, report_type, latitude is not None, longitude is not None]):
         return jsonify({'msg': 'Missing required fields or invalid coordinates'}), 400
-
-    if not isinstance(subject, str) or not subject.strip():
+    if not subject:  # Simplified check
         return jsonify({'msg': 'Subject must be a non-empty string'}), 422
-
     if report_type not in [e.value for e in ReportType]:
         return jsonify({'msg': 'Invalid report type'}), 400
 
@@ -85,13 +78,8 @@ def create_report():
             return jsonify({'msg': 'File type not allowed'}), 400
 
     report = Report(
-        user_id=user_id,
-        subject=subject,  # Changed from 'title'
-        description=description,
-        type=ReportType(report_type),
-        latitude=latitude,
-        longitude=longitude,
-        media_url=media_url
+        user_id=user_id, subject=subject, description=description, type=ReportType(report_type),
+        latitude=latitude, longitude=longitude, media_url=media_url
     )
     db.session.add(report)
     db.session.commit()
@@ -103,23 +91,14 @@ def get_reports():
     user_id = get_jwt_identity()
     claims = get_jwt()
     user_role = claims.get('role')
-
     if user_role == 'admin':
         reports = Report.query.all()
     else:
         reports = Report.query.filter_by(user_id=user_id).all()
-
     result = [{
-        'id': r.id,
-        'subject': r.subject,  # Changed from 'title'
-        'description': r.description,
-        'type': r.type.value,
-        'latitude': r.latitude,
-        'longitude': r.longitude,
-        'status': r.status.value,
-        'created_at': r.created_at.isoformat(),
-        'updated_at': r.updated_at.isoformat(),
-        'media_url': r.media_url
+        'id': r.id, 'subject': r.subject, 'description': r.description, 'type': r.type.value,
+        'latitude': r.latitude, 'longitude': r.longitude, 'status': r.status.value,
+        'created_at': r.created_at.isoformat(), 'updated_at': r.updated_at.isoformat(), 'media_url': r.media_url
     } for r in reports]
     return jsonify(result), 200
 
@@ -128,18 +107,16 @@ def get_reports():
 def edit_report(report_id):
     user_id = get_jwt_identity()
     report = Report.query.get_or_404(report_id)
-
     if report.user_id != user_id:
         return jsonify({'msg': 'Unauthorized'}), 403
     if report.status != ReportStatus.draft:
         return jsonify({'msg': 'Cannot edit report unless status is Draft'}), 400
-
     data = request.get_json()
-    report.subject = data.get('subject', report.subject)  # Changed from 'title'
+    report.subject = data.get('subject', report.subject)
     report.description = data.get('description', report.description)
     report.type = ReportType(data.get('type')) if data.get('type') else report.type
-    report.latitude = data.get('latitude', report.latitude)
-    report.longitude = data.get('longitude', report.longitude)
+    report.latitude = data.get('latitude', report.latitude)  # Updated from 'lat'
+    report.longitude = data.get('longitude', report.longitude)  # Updated from 'lng'
     db.session.commit()
     return jsonify({'msg': 'Report updated successfully'}), 200
 
@@ -148,12 +125,10 @@ def edit_report(report_id):
 def delete_report(report_id):
     user_id = get_jwt_identity()
     report = Report.query.get_or_404(report_id)
-
     if report.user_id != user_id:
         return jsonify({'msg': 'Unauthorized'}), 403
     if report.status != ReportStatus.draft:
         return jsonify({'msg': 'Cannot delete report unless status is Draft'}), 400
-
     db.session.delete(report)
     db.session.commit()
     return jsonify({'msg': 'Report deleted successfully'}), 200
@@ -167,11 +142,9 @@ def update_report_status(report_id):
     report = Report.query.get_or_404(report_id)
     data = request.get_json()
     new_status = data.get('status')
-
     valid_statuses = [ReportStatus.under_investigation.value, ReportStatus.rejected.value, ReportStatus.resolved.value]
     if new_status not in valid_statuses:
         return jsonify({'msg': 'Invalid status'}), 400
-
     report.status = ReportStatus(new_status)
     db.session.commit()
     return jsonify({'msg': f'Report status updated to {new_status}'}), 200
