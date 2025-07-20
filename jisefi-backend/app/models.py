@@ -4,7 +4,6 @@ from sqlalchemy import Enum
 import enum
 from werkzeug.security import generate_password_hash, check_password_hash
 
-
 class UserRole(enum.Enum):
     user = "user"
     admin = "admin"
@@ -40,7 +39,7 @@ class Report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    title = db.Column(db.String(255), nullable=False)
+    subject = db.Column(db.String(255), nullable=False)  # Changed from 'title'
     description = db.Column(db.Text, nullable=False)
     type = db.Column(db.Enum(ReportType), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
@@ -48,4 +47,4 @@ class Report(db.Model):
     status = db.Column(db.Enum(ReportStatus), default=ReportStatus.draft, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    media_url = db.Column(db.String(255), nullable=True) # <--- ADDED THIS LINE FOR MEDIA URL
+    media_url = db.Column(db.String(255), nullable=True)
