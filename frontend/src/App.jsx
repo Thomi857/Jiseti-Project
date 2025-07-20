@@ -6,6 +6,7 @@ import MapDisplay from './components/MapDisplay/MapDisplay';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard/Dashboard';
 import CreateRecord from './pages/CreateRecord/CreateRecord'; // Import the new component
+import RecordDetail from './pages/Records/RecordDetail';
 
 function App() {
   return (
@@ -34,6 +35,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CreateRecord />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/records/:id"
+            element={
+              <ProtectedRoute>
+                <RecordDetail />
               </ProtectedRoute>
             }
           />
