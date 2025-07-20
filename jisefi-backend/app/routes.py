@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 main = Blueprint('main', __name__)
 
-# Helper function
+# function
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
@@ -98,4 +98,4 @@ def create_report():
     db.session.commit()
     return jsonify({'msg': 'Report created successfully', 'report_id': report.id}), 201
 
-# ... keep rest of your routes similarly cleaned up
+

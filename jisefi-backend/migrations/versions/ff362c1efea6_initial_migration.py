@@ -1,8 +1,8 @@
-"""Create users and other tables
+"""Initial migration
 
-Revision ID: c8dbef6da8c7
+Revision ID: ff362c1efea6
 Revises: 
-Create Date: 2025-07-17 20:18:33.428121
+Create Date: 2025-07-20 17:29:57.440578
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c8dbef6da8c7'
+revision = 'ff362c1efea6'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,7 +22,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=120), nullable=False),
     sa.Column('email', sa.String(length=120), nullable=False),
-    sa.Column('password_hash', sa.String(length=128), nullable=False),
+    sa.Column('password_hash', sa.Text(), nullable=False),
     sa.Column('role', sa.Enum('user', 'admin', name='userrole'), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
@@ -31,7 +31,7 @@ def upgrade():
     op.create_table('reports',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('subject', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
     sa.Column('type', sa.Enum('red_flag', 'intervention', name='reporttype'), nullable=False),
     sa.Column('latitude', sa.Float(), nullable=False),
@@ -39,6 +39,7 @@ def upgrade():
     sa.Column('status', sa.Enum('draft', 'under_investigation', 'rejected', 'resolved', name='reportstatus'), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('media_url', sa.String(length=255), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
