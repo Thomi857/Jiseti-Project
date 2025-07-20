@@ -12,7 +12,7 @@ migrate = Migrate()
 jwt = JWTManager()
 
 def create_app():
-    # Load environment variables from .env file
+    
     load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
     app = Flask(__name__)
