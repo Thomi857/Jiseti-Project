@@ -10,6 +10,7 @@ class Config:
     # --- ADDED FOR FILE UPLOADS ---
     # Define the folder where uploaded files will be stored.
     # It creates a 'static/uploads' directory relative to the app's root.
+
     UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
     # Define the allowed file extensions for uploads. Customize as needed.
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov'}

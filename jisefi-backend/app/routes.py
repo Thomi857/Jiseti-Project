@@ -115,8 +115,8 @@ def edit_report(report_id):
     report.subject = data.get('subject', report.subject)
     report.description = data.get('description', report.description)
     report.type = ReportType(data.get('type')) if data.get('type') else report.type
-    report.latitude = data.get('latitude', report.latitude)  # Updated from 'lat'
-    report.longitude = data.get('longitude', report.longitude)  # Updated from 'lng'
+    report.latitude = data.get('latitude', report.latitude)
+    report.longitude = data.get('longitude', report.longitude)
     db.session.commit()
     return jsonify({'msg': 'Report updated successfully'}), 200
 
