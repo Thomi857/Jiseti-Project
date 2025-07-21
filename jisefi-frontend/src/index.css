@@ -1,0 +1,105 @@
+/* General page styling */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #EBE8DB; /* Light background color */
+  color: #3D8D7A; /* Dark greenish text */
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  display: block;
+}
+
+/* Contact page container */
+.contact-page {
+  width: 20%;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #A3D1C6; /* Soft greenish background */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Header styling */
+.contact-page h1 {
+  color: #3D8D7A;
+  font-size: 2.5rem;
+  text-align: center;
+}
+
+/* Paragraph styling */
+.contact-page p {
+  color: #3D8D7A;
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Contact form styling */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Input and textarea styling */
+.contact-form input,
+.contact-form textarea {
+  padding: 0.75rem;
+  border: 2px solid #B3D8A8; /* Light green border */
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #FBFFE4; /* Light yellowish background */
+  color: #3D8D7A; /* Dark text */
+}
+
+/* Input focus styling */
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: #61A89F; /* Slightly darker green border on focus */
+  background-color: #A3D1C6; /* Slightly darker background on focus */
+}
+
+/* Button styling */
+ button {
+  padding: 1rem;
+  background-color: #EC5228; /* Darker green for the button */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Button hover effect */
+.contact-form button:hover {
+  background-color: #3D8D7A; /* Dark green background on hover */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .contact-page {
+      width: 90%;
+      padding: 1.5rem;
+  }
+
+  .contact-page h1 {
+      font-size: 2rem;
+  }
+}
+#navStyle {
+  background-color: #A3D1C6; /* Soft greenish background */
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #A3D1C6; /* Soft greenish background */
+  padding: 1rem;
+  text-align: center;
+  font-family:Georgia, 'Times New Roman', Times, serif;
+  text-decoration: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+}
