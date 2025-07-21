@@ -1,49 +1,65 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useEffect, useState, useContext } from 'react';
-import { getRecordById, deleteRecord } from '../../api/records';
-import { AuthContext } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
 
 function RecordDetail() {
   const { id } = useParams();
+  const { user } = useAuth(); // ✅ This replaces AuthContext
   const [record, setRecord] = useState(null);
-  const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    async function fetchRecord() {
-      const data = await getRecordById(id);
-      setRecord(data);
-    }
+    const fetchRecord = async () => {
+      try {
+        const response = await api.get(`/reports/${id}`);
+        setRecord(response.data);
+      } catch (err) {
+        setError('Failed to load record');
+        console.error(err);
+      }
+    };
     fetchRecord();
   }, [id]);
 
+  if (error) return <p className="text-red-600">{error}</p>;
   if (!record) return <p>Loading...</p>;
 
-  const canEditOrDelete =
-    record.created_by === user?.id && record.status === 'draft';
-
-  const handleDelete = async () => {
-    await deleteRecord(id);
-    navigate('/dashboard');
-  };
+  const isOwner = user && user.id === record.user_id;
+  const isEditable = record.status === 'draft';
 
   return (
-    <div>
-      <h2>{record.title}</h2>
-      <p>{record.description}</p>
-      <p>Type: {record.type}</p>
-      <p>Status: {record.status}</p>
-      <p>Location: {record.latitude}, {record.longitude}</p>
-      {record.image_url && <img src={record.image_url} alt="Attachment" />}
-      {record.video_url && (
-        <video controls src={record.video_url} width="400" />
+    <div className="max-w-3xl mx-auto bg-white rounded shadow p-6 mt-6">
+      <h2 className="text-2xl font-bold mb-4">{record.subject}</h2>
+      <p className="mb-2 text-gray-600">{record.description}</p>
+      <p className="text-sm text-gray-500 mb-4">Type: {record.type}</p>
+      <p className="text-sm text-gray-500 mb-4">Status: {record.status}</p>
+
+      {record.latitude && record.longitude && (
+        <p className="mb-4">Location: {record.latitude}, {record.longitude}</p>
       )}
 
-      {canEditOrDelete && (
-        <div>
-          <button onClick={() => navigate(`/records/${id}/edit`)}>Edit</button>
-          <button onClick={handleDelete}>Delete</button>
+      {record.media_url && (
+        <div className="mb-4">
+          {record.media_url.match(/\.(jpeg|jpg|png|gif)$/i) ? (
+            <img src={record.media_url} alt="Media" className="max-w-full rounded" />
+          ) : (
+            <video controls className="max-w-full rounded">
+              <source src={record.media_url} />
+              Your browser does not support the video tag.
+            </video>
+          )}
+        </div>
+      )}
+
+      {isOwner && isEditable && (
+        <div className="space-x-4">
+          <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">
+            Edit
+          </button>
+          <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+            Delete
+          </button>
         </div>
       )}
     </div>

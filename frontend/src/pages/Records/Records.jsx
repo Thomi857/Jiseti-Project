@@ -14,7 +14,7 @@ function Records() {
 
   const fetchUserRecords = async () => {
     try {
-      const res = await axios.get('/api/my-records'); 
+      const res = await axios.get('/api/my-records'); // assumes JWT is included
       setRecords(res.data.records);
     } catch (err) {
       console.error('Error fetching user records:', err);

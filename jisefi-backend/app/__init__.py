@@ -5,21 +5,22 @@ from flask_jwt_extended import JWTManager
 from .config import Config
 from dotenv import load_dotenv
 import os
-from flask_cors import CORS # <--- ADD THIS IMPORT
+from flask_cors import CORS  # ✅ CORS import
 
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
 def create_app():
-    # Load environment variables from .env file
     load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}) # <--- ADD THIS LINE FOR CORS
-    # This will allow all routes (r"/*") to accept requests from http://localhost:5173
+    # ✅ Apply CORS for frontend requests with credentials (cookies or JWT)
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+    # Or allow all routes:
+    # CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -31,6 +32,5 @@ def create_app():
     with app.app_context():
         for rule in app.url_map.iter_rules():
             print(f"{rule} -> {rule.endpoint}")
-
 
     return app

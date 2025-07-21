@@ -1,68 +1,80 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 function Dashboard() {
-  const [records, setRecords] = useState([]);
-  const [filteredRecords, setFilteredRecords] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const { token } = useAuth();
+  const [records, setRecords] = useState([]);       // ✅ safe default
+  const [filterType, setFilterType] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    const fetchRecords = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await api.get('/reports', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setRecords(response.data);                 // ✅ store array
+      } catch (err) {
+        console.error('Fetch error:', err);
+        setError(err.response?.data?.msg || 'Failed to load records.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchRecords();
-  }, []);
+  }, [token]);
 
-  useEffect(() => {
-    filterRecords();
-  }, [records, filter]);
+  // ✅ Filtering
+  const filteredRecords =
+    filterType === 'all'
+      ? records
+      : records.filter((record) => record.type === filterType);
 
-  const fetchRecords = async () => {
-    try {
-      const res = await axios.get('/api/records'); // proxy in vite.config.js should handle this
-      setRecords(res.data.records);
-    } catch (err) {
-      console.error('Failed to fetch records:', err);
-    }
-  };
+  if (loading) return <p className="p-4 text-center">Loading records...</p>;
 
-  const filterRecords = () => {
-    if (filter === 'all') {
-      setFilteredRecords(records);
-    } else {
-      setFilteredRecords(records.filter((r) => r.type === filter));
-    }
-  };
-
-  const handleFilterChange = (type) => {
-    setFilter(type);
-  };
+  if (error) return <p className="p-4 text-red-600 text-center">{error}</p>;
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">All Reports</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">All Reports</h1>
 
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => handleFilterChange('all')} className="bg-gray-200 px-3 py-1 rounded">
-          All
-        </button>
-        <button onClick={() => handleFilterChange('red-flag')} className="bg-red-200 px-3 py-1 rounded">
-          Red-flag
-        </button>
-        <button onClick={() => handleFilterChange('intervention')} className="bg-blue-200 px-3 py-1 rounded">
-          Intervention
-        </button>
+      <div className="mb-4 flex justify-center">
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className="border px-4 py-2 rounded"
+        >
+          <option value="all">All</option>
+          <option value="red-flag">Red Flags</option>
+          <option value="intervention">Interventions</option>
+        </select>
       </div>
 
-      {filteredRecords.length === 0 ? (
-        <p>No records found.</p>
+      {filteredRecords?.length === 0 ? (
+        <p className="text-center text-gray-600">No records found.</p>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid gap-4">
           {filteredRecords.map((record) => (
             <div key={record.id} className="border p-4 rounded shadow">
-              <h2 className="text-xl font-semibold">{record.title}</h2>
-              <p className="text-sm text-gray-600 mb-1">Type: {record.type}</p>
-              <p className="text-sm text-gray-600 mb-1">Status: {record.status}</p>
-              <p className="text-sm text-gray-600 mb-1">By: {record.created_by}</p>
-              <p className="mt-2">{record.description}</p>
-              {/* Optionally show media, location, actions, etc. */}
+              <h2 className="text-xl font-semibold">{record.subject}</h2>
+              <p className="text-sm text-gray-600">{record.type}</p>
+              <p className="mt-2 text-gray-700">{record.description}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Coordinates: {record.latitude}, {record.longitude}
+              </p>
+              <Link
+                to={`/records/${record.id}`}
+                className="inline-block mt-2 text-blue-600 hover:underline"
+              >
+                View Details
+              </Link>
             </div>
           ))}
         </div>
