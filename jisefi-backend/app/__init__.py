@@ -5,14 +5,14 @@ from flask_jwt_extended import JWTManager
 from .config import Config
 from dotenv import load_dotenv
 import os
-from flask_cors import CORS # <--- ADD THIS IMPORT
+from flask_cors import CORS 
 
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
 def create_app():
-    # Load environment variables from .env file
+    
     load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
     app = Flask(__name__)
