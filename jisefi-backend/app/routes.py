@@ -153,4 +153,3 @@ def update_report_status(report_id):
 def test_route():
     data = request.get_json()
     return jsonify(data), 200
-
