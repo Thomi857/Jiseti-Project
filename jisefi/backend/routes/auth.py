@@ -3,9 +3,9 @@ from ..extensions import db
 from ..models import User
 from ..utils.helpers import generate_token, verify_token
 
-auth_bp = Blueprint('auth', __name__)
+bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-@auth_bp.route('/register', methods=['POST'])
+@bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
@@ -24,7 +24,7 @@ def register():
 
     return jsonify({'message': 'User registered successfully.'}), 201
 
-@auth_bp.route('/login', methods=['POST'])
+@bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
@@ -37,12 +37,11 @@ def login():
 
     return jsonify({'message': 'Invalid username or password.'}), 401
 
-@auth_bp.route('/logout', methods=['POST'])
+@bp.route('/logout', methods=['POST'])
 def logout():
-    # Logic for logging out the user (e.g., invalidating the token) can be added here
     return jsonify({'message': 'User logged out successfully.'}), 200
 
-@auth_bp.route('/verify', methods=['POST'])
+@bp.route('/verify', methods=['POST'])
 def verify():
     token = request.headers.get('Authorization')
     if not token:
