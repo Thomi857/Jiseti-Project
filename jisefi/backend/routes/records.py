@@ -2,14 +2,18 @@ from flask import Blueprint, request, jsonify
 from ..extensions import db
 from ..models import Record
 
-records_bp = Blueprint('records', __name__)
+bp = Blueprint('records', __name__, url_prefix='/records')
 
-@records_bp.route('/records', methods=['GET'])
+@bp.route('/')
+def get_records():
+    return {"message": "Records endpoint"}
+
+@bp.route('/records', methods=['GET'])
 def get_records():
     records = Record.query.all()
     return jsonify([record.to_dict() for record in records]), 200
 
-@records_bp.route('/records', methods=['POST'])
+@bp.route('/records', methods=['POST'])
 def create_record():
     data = request.get_json()
     new_record = Record(**data)
@@ -17,12 +21,12 @@ def create_record():
     db.session.commit()
     return jsonify(new_record.to_dict()), 201
 
-@records_bp.route('/records/<int:record_id>', methods=['GET'])
+@bp.route('/records/<int:record_id>', methods=['GET'])
 def get_record(record_id):
     record = Record.query.get_or_404(record_id)
     return jsonify(record.to_dict()), 200
 
-@records_bp.route('/records/<int:record_id>', methods=['PUT'])
+@bp.route('/records/<int:record_id>', methods=['PUT'])
 def update_record(record_id):
     data = request.get_json()
     record = Record.query.get_or_404(record_id)
@@ -31,7 +35,7 @@ def update_record(record_id):
     db.session.commit()
     return jsonify(record.to_dict()), 200
 
-@records_bp.route('/records/<int:record_id>', methods=['DELETE'])
+@bp.route('/records/<int:record_id>', methods=['DELETE'])
 def delete_record(record_id):
     record = Record.query.get_or_404(record_id)
     db.session.delete(record)

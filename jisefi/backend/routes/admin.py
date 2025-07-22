@@ -1,10 +1,14 @@
 from flask import Blueprint, request, jsonify
-from ..models import Record  # Assuming you have a Record model
-from ..extensions import db  # Assuming you have initialized your database
+from ..extensions import db
+from ..models import Record
 
-admin_bp = Blueprint('admin', __name__)
+bp = Blueprint('admin', __name__, url_prefix='/admin')
 
-@admin_bp.route('/admin/records/<int:record_id>/status', methods=['PATCH'])
+@bp.route('/dashboard')
+def dashboard():
+    return {"message": "Admin dashboard"}
+
+@bp.route('/admin/records/<int:record_id>/status', methods=['PATCH'])
 def change_record_status(record_id):
     data = request.get_json()
     new_status = data.get('status')
@@ -18,12 +22,12 @@ def change_record_status(record_id):
 
     return jsonify({'message': 'Record status updated successfully'}), 200
 
-@admin_bp.route('/admin/records', methods=['GET'])
+@bp.route('/admin/records', methods=['GET'])
 def get_all_records():
     records = Record.query.all()
     return jsonify([record.to_dict() for record in records]), 200
 
-@admin_bp.route('/admin/records/<int:record_id>', methods=['DELETE'])
+@bp.route('/admin/records/<int:record_id>', methods=['DELETE'])
 def delete_record(record_id):
     record = Record.query.get(record_id)
     if not record:
