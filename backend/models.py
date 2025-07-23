@@ -2,14 +2,24 @@ from database import get_db_connection
 from psycopg2.extras import RealDictCursor
 import logging
 
+def _convert_report(report):
+    """Ensure latitude and longitude are returned as floats"""
+    if not report:
+        return None
+    try:
+        report = dict(report)
+        report['latitude'] = float(report['latitude'])
+        report['longitude'] = float(report['longitude'])
+    except (KeyError, ValueError, TypeError):
+        logging.warning("Latitude/longitude conversion failed.")
+    return report
+
 class User:
     @staticmethod
     def find_by_username(username):
-        """Find user by username"""
         conn = get_db_connection()
         if not conn:
             return None
-        
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)
             cur.execute("SELECT * FROM users WHERE username = %s", (username,))
@@ -23,11 +33,9 @@ class User:
     
     @staticmethod
     def find_by_id(user_id):
-        """Find user by ID"""
         conn = get_db_connection()
         if not conn:
             return None
-        
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)
             cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
@@ -41,27 +49,20 @@ class User:
     
     @staticmethod
     def create(username, email, password_hash):
-        """Create new user"""
         conn = get_db_connection()
         if not conn:
             return None
-        
         try:
             cur = conn.cursor()
-            
-            # Check if user exists
             cur.execute("SELECT id FROM users WHERE username = %s OR email = %s", (username, email))
             if cur.fetchone():
                 return None
-            
-            # Create user
             cur.execute(
                 "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s) RETURNING id",
                 (username, email, password_hash)
             )
             user_id = cur.fetchone()[0]
             conn.commit()
-            
             cur.close()
             conn.close()
             return user_id
@@ -72,11 +73,9 @@ class User:
 class Report:
     @staticmethod
     def get_all():
-        """Get all reports with user information"""
         conn = get_db_connection()
         if not conn:
             return []
-        
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)
             cur.execute('''
@@ -88,36 +87,32 @@ class Report:
             reports = cur.fetchall()
             cur.close()
             conn.close()
-            return [dict(report) for report in reports]
+            return [_convert_report(report) for report in reports]
         except Exception as e:
             logging.error(f"Error getting reports: {e}")
             return []
     
     @staticmethod
     def get_by_id(report_id):
-        """Get report by ID"""
         conn = get_db_connection()
         if not conn:
             return None
-        
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)
             cur.execute("SELECT * FROM reports WHERE id = %s", (report_id,))
             report = cur.fetchone()
             cur.close()
             conn.close()
-            return report
+            return _convert_report(report)
         except Exception as e:
             logging.error(f"Error getting report: {e}")
             return None
     
     @staticmethod
     def create(title, description, record_type, latitude, longitude, user_id):
-        """Create new report"""
         conn = get_db_connection()
         if not conn:
             return None
-        
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)
             cur.execute('''
@@ -125,64 +120,52 @@ class Report:
                 VALUES (%s, %s, %s, %s, %s, %s) 
                 RETURNING *
             ''', (title, description, record_type, latitude, longitude, user_id))
-            
             report = cur.fetchone()
             conn.commit()
             cur.close()
             conn.close()
-            return dict(report)
+            return _convert_report(report)
         except Exception as e:
             logging.error(f"Error creating report: {e}")
             return None
     
     @staticmethod
     def update(report_id, update_data):
-        """Update report"""
         conn = get_db_connection()
         if not conn:
             return None
-        
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)
-            
-            # Build update query dynamically
             update_fields = []
             params = []
-            
             for field, value in update_data.items():
                 if field in ['title', 'description', 'latitude', 'longitude', 'status']:
                     update_fields.append(f'{field} = %s')
                     params.append(value)
-            
             if not update_fields:
                 return None
-            
             update_fields.append('updated_at = CURRENT_TIMESTAMP')
             params.append(report_id)
-            
             cur.execute(f'''
                 UPDATE reports 
                 SET {', '.join(update_fields)}
                 WHERE id = %s 
                 RETURNING *
             ''', params)
-            
             updated_report = cur.fetchone()
             conn.commit()
             cur.close()
             conn.close()
-            return dict(updated_report) if updated_report else None
+            return _convert_report(updated_report)
         except Exception as e:
             logging.error(f"Error updating report: {e}")
             return None
     
     @staticmethod
     def delete(report_id):
-        """Delete report"""
         conn = get_db_connection()
         if not conn:
             return False
-        
         try:
             cur = conn.cursor()
             cur.execute("DELETE FROM reports WHERE id = %s", (report_id,))

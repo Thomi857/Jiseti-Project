@@ -5,24 +5,22 @@ import logging
 from config import Config
 
 def get_db_connection():
-    """Get database connection"""
+    """Establish connection to PostgreSQL database"""
     try:
-        conn = psycopg2.connect(**Config.DATABASE_CONFIG)
-        return conn
+        return psycopg2.connect(**Config.DATABASE_CONFIG)
     except Exception as e:
         logging.error(f"Database connection error: {e}")
         return None
 
 def init_db():
-    """Initialize database tables and default admin user"""
+    """Initialize tables and seed default admin user"""
     conn = get_db_connection()
     if not conn:
         return False
-    
     try:
         cur = conn.cursor()
-        
-        # Create users table
+
+        # Users table
         cur.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -33,8 +31,8 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        
-        # Create reports table
+
+        # Reports table
         cur.execute('''
             CREATE TABLE IF NOT EXISTS reports (
                 id SERIAL PRIMARY KEY,
@@ -49,19 +47,19 @@ def init_db():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        
+
         conn.commit()
-        
+
         # Create default admin user
         cur.execute("SELECT id FROM users WHERE username = 'admin'")
         if not cur.fetchone():
             admin_password = generate_password_hash('admin123')
-            cur.execute(
-                "INSERT INTO users (username, email, password_hash, is_admin) VALUES (%s, %s, %s, %s)",
-                ('admin', 'admin@jiseti.com', admin_password, True)
-            )
+            cur.execute('''
+                INSERT INTO users (username, email, password_hash, is_admin)
+                VALUES (%s, %s, %s, %s)
+            ''', ('admin', 'admin@jiseti.com', admin_password, True))
             conn.commit()
-        
+
         cur.close()
         conn.close()
         return True
