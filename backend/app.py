@@ -1,70 +1,27 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from werkzeug.security import generate_password_hash
+from dotenv import load_dotenv
+load_dotenv()
+from flask import Flask, request, jsonify
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 import logging
+
 from config import Config
+from database import init_db
+from routes.auth_routes import auth_bp
+from routes.report_routes import reports_bp
 
-def get_db_connection():
-    """Get database connection"""
-    try:
-        conn = psycopg2.connect(**Config.DATABASE_CONFIG)
-        return conn
-    except Exception as e:
-        logging.error(f"Database connection error: {e}")
-        return None
+app = Flask(__name__)
+app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
+jwt = JWTManager(app)
+CORS(app)
 
-def init_db():
-    """Initialize database tables and default admin user"""
-    conn = get_db_connection()
-    if not conn:
-        return False
-    
-    try:
-        cur = conn.cursor()
-        
-        # Create users table
-        cur.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(80) UNIQUE NOT NULL,
-                email VARCHAR(120) UNIQUE NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
-                is_admin BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # Create reports table
-        cur.execute('''
-            CREATE TABLE IF NOT EXISTS reports (
-                id SERIAL PRIMARY KEY,
-                title VARCHAR(200) NOT NULL,
-                description TEXT NOT NULL,
-                record_type VARCHAR(20) NOT NULL CHECK (record_type IN ('red_flag', 'intervention')),
-                latitude DECIMAL(10, 8) NOT NULL,
-                longitude DECIMAL(11, 8) NOT NULL,
-                status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'under_investigation', 'rejected', 'resolved')),
-                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        conn.commit()
-        
-        # Create default admin user
-        cur.execute("SELECT id FROM users WHERE username = 'admin'")
-        if not cur.fetchone():
-            admin_password = generate_password_hash('admin123')
-            cur.execute(
-                "INSERT INTO users (username, email, password_hash, is_admin) VALUES (%s, %s, %s, %s)",
-                ('admin', 'admin@jiseti.com', admin_password, True)
-            )
-            conn.commit()
-        
-        cur.close()
-        conn.close()
-        return True
-    except Exception as e:
-        logging.error(f"Database initialization error: {e}")
-        return False
+# Register blueprints
+app.register_blueprint(auth_bp, url_prefix='/api')
+app.register_blueprint(reports_bp, url_prefix='/api')
+
+if __name__ == '__main__':
+    if init_db():
+        app.run(debug=True, port=5000)
+    else:
+        print("Failed to initialize database")

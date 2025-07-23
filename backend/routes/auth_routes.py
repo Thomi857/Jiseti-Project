@@ -24,7 +24,8 @@ def register():
             return jsonify({'error': 'Username or email already exists'}), 400
         
         # Create access token
-        access_token = create_access_token(identity=user_id)
+        # FIX: Convert user_id to a string before creating the token
+        access_token = create_access_token(identity=str(user_id))
         
         return jsonify({
             'access_token': access_token,
@@ -48,7 +49,8 @@ def login():
         user = User.find_by_username(username)
         
         if user and check_password_hash(user['password_hash'], password):
-            access_token = create_access_token(identity=user['id'])
+            # FIX: Convert user['id'] to a string before creating the token
+            access_token = create_access_token(identity=str(user['id']))
             
             return jsonify({
                 'access_token': access_token,
