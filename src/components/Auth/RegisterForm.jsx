@@ -5,16 +5,18 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import Button from '../UI/Button';
 import Input from '../UI/Input';
 
-const LoginForm = () => {
+const RegisterForm = () => {
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
+    confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,11 +24,27 @@ const LoginForm = () => {
     setLoading(true);
     setError('');
 
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await login(formData);
+      await register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      });
       navigate('/');
     } catch (error) {
-      setError(error.response?.data?.error || 'Login failed');
+      setError(error.response?.data?.error || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -43,15 +61,15 @@ const LoginForm = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Sign in to your account
+          Create your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Or{' '}
           <Link
-            to="/register"
+            to="/login"
             className="font-medium text-primary-600 hover:text-primary-500"
           >
-            create a new account
+            sign in to existing account
           </Link>
         </p>
       </div>
@@ -74,7 +92,20 @@ const LoginForm = () => {
                 required
                 value={formData.username}
                 onChange={handleChange}
-                placeholder="Enter your username"
+                placeholder="Choose a username"
+              />
+            </div>
+
+            <div>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                label="Email address"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter your email"
               />
             </div>
 
@@ -91,7 +122,7 @@ const LoginForm = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 pr-10 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                 />
                 <button
                   type="button"
@@ -108,28 +139,33 @@ const LoginForm = () => {
             </div>
 
             <div>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                label="Confirm Password"
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm your password"
+              />
+            </div>
+
+            <div>
               <Button
                 type="submit"
                 disabled={loading}
                 loading={loading}
                 className="w-full"
               >
-                Sign in
+                Create account
               </Button>
             </div>
           </form>
-
-          <div className="mt-6">
-            <div className="text-center">
-              <span className="text-sm text-gray-500">
-                Demo credentials: admin/admin123 (Admin) or register as new user
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default LoginForm;
+export default RegisterForm;
