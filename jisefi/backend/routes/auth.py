@@ -3,7 +3,7 @@ from ..extensions import db
 from ..models import User
 from ..utils.helpers import generate_token, verify_token
 
-bp = Blueprint('auth', __name__)
+bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @bp.route('/register', methods=['POST'])
 def register():

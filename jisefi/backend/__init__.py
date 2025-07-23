@@ -11,6 +11,7 @@ def create_app():
     migrate.init_app(app, db)
 
     # register blueprints
+
     from .routes.auth import bp as auth_bp
     from .routes.admin import bp as admin_bp
     from .routes.records import bp as records_bp
@@ -18,5 +19,4 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(records_bp)
-
     return app
