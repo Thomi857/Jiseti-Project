@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import Button from '../UI/Button';
 import Input from '../UI/Input';
+import LoadingSpinner from '../UI/LoadingSpinner'; // Make sure this path matches your project
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -22,12 +23,20 @@ const LoginForm = () => {
     setLoading(true);
     setError('');
 
+    const startTime = Date.now();
+
     try {
       await login(formData);
-      navigate('/');
+
+      const elapsed = Date.now() - startTime;
+      const delay = Math.max(0, 1500 - elapsed); // Enforce minimum 1.5s loading time
+
+      setTimeout(() => {
+        navigate('/');
+        setLoading(false);
+      }, delay);
     } catch (error) {
       setError(error.response?.data?.error || 'Login failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -38,6 +47,18 @@ const LoginForm = () => {
       [e.target.name]: e.target.value,
     });
   };
+
+  // === Full-screen overlay during loading ===
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div className="flex flex-col items-center">
+          <LoadingSpinner size="lg" />
+          <p className="text-white mt-4 text-lg animate-pulse">Signing you in...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -108,24 +129,11 @@ const LoginForm = () => {
             </div>
 
             <div>
-              <Button
-                type="submit"
-                disabled={loading}
-                loading={loading}
-                className="w-full"
-              >
+              <Button type="submit" className="w-full">
                 Sign in
               </Button>
             </div>
           </form>
-
-          <div className="mt-6">
-            <div className="text-center">
-              <span className="text-sm text-gray-500">
-                Demo credentials: admin/admin123 (Admin) or register as new user
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
