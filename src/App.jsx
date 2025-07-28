@@ -10,6 +10,7 @@ import AdminPanel from './components/Admin/AdminPanel';
 import './index.css';
 
 function App() {
+  console.log("App loaded");
   return (
     <AuthProvider>
       <Router>
