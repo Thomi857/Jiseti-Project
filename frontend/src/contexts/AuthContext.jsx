@@ -39,6 +39,7 @@ const login = async (credentials) => {
 };
 
 
+
 const register = async (userData) => {
   setAuthLoading(true);
   try {
@@ -73,6 +74,8 @@ const value = {
   isAuthenticated: !!user,
   isAdmin: user?.is_admin || false,
 };
+
+
 
 
 
