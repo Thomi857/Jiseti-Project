@@ -1,39 +1,15 @@
-
-version: "3.8"
+version: "3.9"
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: moneydb
-      POSTGRES_USER: moneyuser
-      POSTGRES_PASSWORD: supersecret
-    volumes:
-
-  - postgres_data:/var/lib/postgresql/data
-ports:
-  - "5432:5432"
   backend:
     build: ./backend
-    environment:
-      DATABASE_URL: postgresql://postgres:12345@db:5432/moneydb
-      SECRET_KEY: 7e26671c4dd9dda9c0c403c070940d2035aa4e3df341ff9753519bc4bcd90002c6a3b53f74d77ec12a9ab3a5c2a50ea245939836791593a9da6ea419d9c6b6a5
-      FLASK_ENV: development
-    depends_on:
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
 
-  - db
-ports:
-  - "5000:5000"
-volumes:
-  - ./backend:/app
   frontend:
     build: ./frontend
-    environment:
-      VITE_API_URL: http://backend:5000
-    depends_on:
-
-  - backend
-ports:
-  - "3000:80"
-volumes:
-  postgres_data:
-
+    ports:
+      - "3000:80"
