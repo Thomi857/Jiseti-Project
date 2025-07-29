@@ -1,3 +1,5 @@
+import React from 'react'; // Ensure React is imported if not already
+
 const LoadingSpinner = ({ size = 'md', className = '' }) => {
   const sizes = {
     sm: 'h-4 w-4',
@@ -6,7 +8,7 @@ const LoadingSpinner = ({ size = 'md', className = '' }) => {
   };
 
   return (
-    <div className={`animate-spin rounded-full border-b-2 border-primary-600 ${sizes[size]} ${className}`}></div>
+    <div className={`animate-spin rounded-full border-b-2 border-jisefi-green-dark ${sizes[size]} ${className}`}></div>
   );
 };
 
