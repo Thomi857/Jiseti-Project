@@ -30,14 +30,15 @@ const ReportsList = () => {
     }
   };
 
-  const handleUpdateReport = async (reportId, updateData) => {
+  const handleUpdateReport = async (updatedData) => {
     try {
-      await updateReport(reportId, updateData);
+      await updateReport(updatedData.id, updatedData);
       setEditModalOpen(false);
     } catch (error) {
       throw error;
     }
   };
+
 
   const filteredReports = reports.filter(report => {
     if (filter !== 'all' && report.status !== filter) return false;

@@ -13,6 +13,7 @@ const AdminPanel = () => {
   const { isAdmin } = useAuth();
 
   const handleStatusUpdate = async (reportId, newStatus) => {
+     console.log('Calling updateReport from AdminPanel:', reportId, newStatus);
     try {
       await updateReport(reportId, { status: newStatus });
     } catch (error) {

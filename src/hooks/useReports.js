@@ -35,8 +35,10 @@ export const useReports = () => {
   };
 
   const updateReport = async (reportId, updateData) => {
-    try {
-      const updatedReport = await apiClient.updateReport(reportId, updateData);
+  console.log('Updating report with ID:', reportId, 'Data:', updateData);
+  try {
+   const updatedReport = await apiClient.updateReport(reportId, { report: updateData });
+
       await fetchReports(); // Refresh the list
       return updatedReport;
     } catch (error) {

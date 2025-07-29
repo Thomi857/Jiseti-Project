@@ -20,11 +20,13 @@ const ReportEditModal = ({ report, onClose, onUpdate }) => {
     setError('');
     try {
       await onUpdate({
+        id: report.id,
         title: formData.title,
         description: formData.description,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
       });
+
     } catch (error) {
       setError(error.response?.data?.error || 'Failed to update report');
     }
