@@ -1,179 +1,115 @@
-from database import get_db_connection
-from psycopg2.extras import RealDictCursor
-import logging
+from datetime import datetime
+from database import db
 
-def _convert_report(report):
-    """Ensure latitude and longitude are returned as floats"""
-    if not report:
-        return None
-    try:
-        report = dict(report)
-        report['latitude'] = float(report['latitude'])
-        report['longitude'] = float(report['longitude'])
-    except (KeyError, ValueError, TypeError):
-        logging.warning("Latitude/longitude conversion failed.")
-    return report
+# Enums for better DB validation (just like your CHECK constraints)
+from sqlalchemy.dialects.postgresql import ENUM
 
-class User:
+record_type_enum = ENUM('red_flag', 'intervention', name='recordtype_enum', create_type=False)
+status_enum = ENUM('draft', 'under_investigation', 'rejected', 'resolved', name='reportstatus_enum', create_type=False)
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    reports = db.relationship('Report', backref='user', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'is_admin': self.is_admin,
+            'created_at': self.created_at.isoformat()
+        }
+
     @staticmethod
     def find_by_username(username):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-            user = cur.fetchone()
-            cur.close()
-            conn.close()
-            return user
-        except Exception as e:
-            logging.error(f"Error finding user: {e}")
-            return None
-    
+        return User.query.filter_by(username=username).first()
+
     @staticmethod
     def find_by_id(user_id):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-            user = cur.fetchone()
-            cur.close()
-            conn.close()
-            return user
-        except Exception as e:
-            logging.error(f"Error finding user by ID: {e}")
-            return None
-    
+        return User.query.get(user_id)
+
     @staticmethod
     def create(username, email, password_hash):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        try:
-            cur = conn.cursor()
-            cur.execute("SELECT id FROM users WHERE username = %s OR email = %s", (username, email))
-            if cur.fetchone():
-                return None
-            cur.execute(
-                "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s) RETURNING id",
-                (username, email, password_hash)
-            )
-            user_id = cur.fetchone()[0]
-            conn.commit()
-            cur.close()
-            conn.close()
-            return user_id
-        except Exception as e:
-            logging.error(f"Error creating user: {e}")
+        existing_user = User.query.filter((User.username == username) | (User.email == email)).first()
+        if existing_user:
             return None
 
-class Report:
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=password_hash
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return new_user.id
+
+
+class Report(db.Model):
+    __tablename__ = 'reports'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    record_type = db.Column(record_type_enum, nullable=False)
+    latitude = db.Column(db.Numeric(10, 8), nullable=False)
+    longitude = db.Column(db.Numeric(11, 8), nullable=False)
+    status = db.Column(status_enum, nullable=False, default='draft')
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'record_type': self.record_type,
+            'latitude': float(self.latitude),
+            'longitude': float(self.longitude),
+            'status': self.status,
+            'user_id': self.user_id,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
     @staticmethod
-    def get_all():
-        conn = get_db_connection()
-        if not conn:
-            return []
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute('''
-                SELECT r.*, u.username 
-                FROM reports r 
-                JOIN users u ON r.user_id = u.id 
-                ORDER BY r.created_at DESC
-            ''')
-            reports = cur.fetchall()
-            cur.close()
-            conn.close()
-            return [_convert_report(report) for report in reports]
-        except Exception as e:
-            logging.error(f"Error getting reports: {e}")
-            return []
-    
+    def find_all_by_user(user_id):
+        return Report.query.filter_by(user_id=user_id).all()
+
     @staticmethod
-    def get_by_id(report_id):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute("SELECT * FROM reports WHERE id = %s", (report_id,))
-            report = cur.fetchone()
-            cur.close()
-            conn.close()
-            return _convert_report(report)
-        except Exception as e:
-            logging.error(f"Error getting report: {e}")
-            return None
-    
+    def find_by_id(report_id):
+        return Report.query.get(report_id)
+
     @staticmethod
-    def create(title, description, record_type, latitude, longitude, user_id):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute('''
-                INSERT INTO reports (title, description, record_type, latitude, longitude, user_id) 
-                VALUES (%s, %s, %s, %s, %s, %s) 
-                RETURNING *
-            ''', (title, description, record_type, latitude, longitude, user_id))
-            report = cur.fetchone()
-            conn.commit()
-            cur.close()
-            conn.close()
-            return _convert_report(report)
-        except Exception as e:
-            logging.error(f"Error creating report: {e}")
-            return None
-    
-    @staticmethod
-    def update(report_id, update_data):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            update_fields = []
-            params = []
-            for field, value in update_data.items():
-                if field in ['title', 'description', 'latitude', 'longitude', 'status']:
-                    update_fields.append(f'{field} = %s')
-                    params.append(value)
-            if not update_fields:
-                return None
-            update_fields.append('updated_at = CURRENT_TIMESTAMP')
-            params.append(report_id)
-            cur.execute(f'''
-                UPDATE reports 
-                SET {', '.join(update_fields)}
-                WHERE id = %s 
-                RETURNING *
-            ''', params)
-            updated_report = cur.fetchone()
-            conn.commit()
-            cur.close()
-            conn.close()
-            return _convert_report(updated_report)
-        except Exception as e:
-            logging.error(f"Error updating report: {e}")
-            return None
-    
-    @staticmethod
-    def delete(report_id):
-        conn = get_db_connection()
-        if not conn:
-            return False
-        try:
-            cur = conn.cursor()
-            cur.execute("DELETE FROM reports WHERE id = %s", (report_id,))
-            deleted = cur.rowcount > 0
-            conn.commit()
-            cur.close()
-            conn.close()
-            return deleted
-        except Exception as e:
-            logging.error(f"Error deleting report: {e}")
-            return False
+    def create(data, user_id):
+        report = Report(
+            title=data['title'],
+            description=data['description'],
+            record_type=data['record_type'],
+            latitude=data['latitude'],
+            longitude=data['longitude'],
+            status='draft',
+            user_id=user_id
+        )
+        db.session.add(report)
+        db.session.commit()
+        return report.id
+
+    def update(self, data):
+        for key in ['title', 'description', 'latitude', 'longitude', 'status']:
+            if key in data:
+                setattr(self, key, data[key])
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
