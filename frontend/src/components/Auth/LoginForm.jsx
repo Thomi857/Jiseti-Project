@@ -122,7 +122,7 @@ const LoginForm = () => {
           <div className="mt-6">
             <div className="text-center">
               <span className="text-sm text-gray-500">
-                Demo credentials: admin/admin123 (Admin) or register as new user
+                Login or register as new user
               </span>
             </div>
           </div>

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// ✅ Updated CreateReportForm.jsx
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { MapPinIcon } from '@heroicons/react/24/outline';
 import apiClient from '../../api/client';
 import { getCurrentLocation } from '../../utils/helpers';
@@ -8,8 +9,12 @@ import Button from '../UI/Button';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Textarea from '../UI/Textarea';
+import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api';
 
 const CreateReportForm = () => {
+  const { id } = useParams();
+  const isEditing = Boolean(id);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -23,30 +28,57 @@ const CreateReportForm = () => {
 
   const navigate = useNavigate();
 
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_Maps_API_KEY,
+  });
+
+  useEffect(() => {
+    if (isEditing) {
+      const fetchReport = async () => {
+        try {
+          const report = await apiClient.getReport(id);
+          setFormData({
+            title: report.title,
+            description: report.description,
+            record_type: report.record_type,
+            latitude: report.latitude.toString(),
+            longitude: report.longitude.toString(),
+          });
+        } catch (err) {
+          setError('Failed to fetch report data');
+        }
+      };
+      fetchReport();
+    }
+  }, [id, isEditing]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    const payload = {
+      ...formData,
+      latitude: parseFloat(formData.latitude),
+      longitude: parseFloat(formData.longitude),
+    };
+
     try {
-      await apiClient.createReport({
-        ...formData,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
-      });
+      if (isEditing) {
+        await apiClient.updateReport(id, payload);
+      } else {
+        await apiClient.createReport(payload);
+      }
       navigate('/');
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to create report');
+      setError(error.response?.data?.error || 'Failed to submit report');
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleGetCurrentLocation = async () => {
@@ -58,142 +90,77 @@ const CreateReportForm = () => {
         latitude: location.latitude.toFixed(6),
         longitude: location.longitude.toFixed(6),
       });
-    } catch (error) {
-      console.error('Error getting location:', error);
-      setError('Unable to get your current location. Please enter coordinates manually.');
+    } catch {
+      setError('Unable to get your current location.');
     } finally {
       setGettingLocation(false);
     }
   };
 
+  const handleMapClick = (e) => {
+    setFormData({
+      ...formData,
+      latitude: e.latLng.lat().toFixed(6),
+      longitude: e.latLng.lng().toFixed(6),
+    });
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Create Report</h1>
-        <p className="text-gray-600">
-          Report corruption or request government intervention for issues in your community.
-        </p>
+        <h1 className="text-3xl font-bold">{isEditing ? 'Edit Report' : 'Create Report'}</h1>
       </div>
-
-      <div className="bg-white shadow-sm rounded-lg">
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {error && (
-            <div className="rounded-md bg-error-50 p-4">
-              <div className="text-sm text-error-700">{error}</div>
-            </div>
-          )}
-
-          <div>
-            <Select
-              id="record_type"
-              name="record_type"
-              label="Report Type"
-              required
-              value={formData.record_type}
-              onChange={handleChange}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <div className="text-red-500">{error}</div>}
+        <Select
+          name="record_type"
+          label="Report Type"
+          required
+          value={formData.record_type}
+          onChange={handleChange}
+        >
+          <option value={REPORT_TYPES.RED_FLAG}>{REPORT_TYPE_LABELS[REPORT_TYPES.RED_FLAG]}</option>
+          <option value={REPORT_TYPES.INTERVENTION}>{REPORT_TYPE_LABELS[REPORT_TYPES.INTERVENTION]}</option>
+        </Select>
+        <Input name="title" label="Title" value={formData.title} onChange={handleChange} required />
+        <Textarea name="description" label="Description" value={formData.description} onChange={handleChange} required />
+        <div className="grid grid-cols-2 gap-4">
+          <Input name="latitude" type="number" step="any" label="Latitude" value={formData.latitude} onChange={handleChange} required />
+          <Input name="longitude" type="number" step="any" label="Longitude" value={formData.longitude} onChange={handleChange} required />
+        </div>
+        <Button type="button" onClick={handleGetCurrentLocation} disabled={gettingLocation}>
+          <MapPinIcon className="w-4 h-4 mr-1" />
+          {gettingLocation ? 'Getting location...' : 'Use Current Location'}
+        </Button>
+        {isLoaded && (
+          <div className="h-64">
+            <GoogleMap
+              mapContainerStyle={{ width: '100%', height: '100%' }}
+              center={{
+                lat: parseFloat(formData.latitude) || -1.286389,
+                lng: parseFloat(formData.longitude) || 36.817223,
+              }}
+              zoom={14}
+              onClick={handleMapClick}
             >
-              <option value={REPORT_TYPES.RED_FLAG}>
-                {REPORT_TYPE_LABELS[REPORT_TYPES.RED_FLAG]} (Corruption)
-              </option>
-              <option value={REPORT_TYPES.INTERVENTION}>
-                {REPORT_TYPE_LABELS[REPORT_TYPES.INTERVENTION]} (Government Action Needed)
-              </option>
-            </Select>
-            <p className="mt-1 text-sm text-gray-500">
-              {formData.record_type === REPORT_TYPES.RED_FLAG
-                ? 'Report corruption, bribery, or misuse of funds'
-                : 'Request government intervention for issues like bad roads, flooding, etc.'
-              }
-            </p>
-          </div>
-
-          <div>
-            <Input
-              type="text"
-              id="title"
-              name="title"
-              label="Title"
-              required
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Brief title describing the issue"
-            />
-          </div>
-
-          <div>
-            <Textarea
-              id="description"
-              name="description"
-              label="Description"
-              required
-              rows={5}
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Provide detailed information about the issue..."
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Input
-                type="number"
-                id="latitude"
-                name="latitude"
-                label="Latitude"
-                required
-                step="any"
-                value={formData.latitude}
-                onChange={handleChange}
-                placeholder="e.g., -1.286389"
+              <Marker
+                position={{
+                  lat: parseFloat(formData.latitude),
+                  lng: parseFloat(formData.longitude),
+                }}
               />
-            </div>
-            <div>
-              <Input
-                type="number"
-                id="longitude"
-                name="longitude"
-                label="Longitude"
-                required
-                step="any"
-                value={formData.longitude}
-                onChange={handleChange}
-                placeholder="e.g., 36.817223"
-              />
-            </div>
+            </GoogleMap>
           </div>
-
-          <div className="flex items-center justify-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGetCurrentLocation}
-              disabled={gettingLocation}
-            >
-              <MapPinIcon className="h-4 w-4 mr-2" />
-              {gettingLocation ? 'Getting location...' : 'Use current location'}
-            </Button>
-          </div>
-
-          <div className="flex items-center justify-end space-x-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/')}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              loading={loading}
-            >
-              Create Report
-            </Button>
-          </div>
-        </form>
-      </div>
+        )}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => navigate('/')}>Cancel</Button>
+          <Button type="submit" loading={loading}>{isEditing ? 'Update Report' : 'Create Report'}</Button>
+        </div>
+      </form>
     </div>
   );
 };
 
 export default CreateReportForm;
+
+

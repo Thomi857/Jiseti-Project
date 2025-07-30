@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import ReportCard from './ReportCard';
 import ReportEditModal from './ReportEditModal';
@@ -13,7 +13,12 @@ const ReportsList = () => {
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+
+  // ✅ Completely skip rendering if user is admin
+  if (user?.is_admin) {
+    return null;
+  }
 
   const handleEditReport = (report) => {
     setSelectedReport(report);
@@ -145,3 +150,4 @@ const ReportsList = () => {
 };
 
 export default ReportsList;
+

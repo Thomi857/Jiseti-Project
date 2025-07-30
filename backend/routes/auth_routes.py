@@ -12,58 +12,64 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-    
+
     if not all([username, email, password]):
         return jsonify({'error': 'All fields are required'}), 400
-    
+
     try:
         password_hash = generate_password_hash(password)
         user_id = User.create(username, email, password_hash)
-        
+
         if not user_id:
             return jsonify({'error': 'Username or email already exists'}), 400
-        
-        # Create access token
-        # FIX: Convert user_id to a string before creating the token
+
         access_token = create_access_token(identity=str(user_id))
-        
+
+        # Fetch full user object after creation
+        user = User.find_by_id(user_id)
+
         return jsonify({
             'access_token': access_token,
-            'user': {'id': user_id, 'username': username, 'email': email, 'is_admin': False}
+            'user': {
+                'id': user['id'],
+                'username': user['username'],
+                'email': user['email'],
+                'is_admin': user.get('is_admin', False)
+            }
         }), 201
-        
+
     except Exception as e:
-        logging.error(f"Registration error: {e}")
+        logging.exception("Registration failed")
         return jsonify({'error': 'Registration failed'}), 500
+
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    
+
     if not all([username, password]):
         return jsonify({'error': 'Username and password are required'}), 400
-    
+
     try:
         user = User.find_by_username(username)
-        
+
         if user and check_password_hash(user['password_hash'], password):
-            # FIX: Convert user['id'] to a string before creating the token
             access_token = create_access_token(identity=str(user['id']))
-            
+
             return jsonify({
                 'access_token': access_token,
                 'user': {
                     'id': user['id'],
                     'username': user['username'],
                     'email': user['email'],
-                    'is_admin': user['is_admin']
+                    'is_admin': user.get('is_admin', False)
                 }
             }), 200
-        else:
-            return jsonify({'error': 'Invalid credentials'}), 401
-            
+
+        return jsonify({'error': 'Invalid credentials'}), 401
+
     except Exception as e:
-        logging.error(f"Login error: {e}")
+        logging.exception("Login failed")
         return jsonify({'error': 'Login failed'}), 500
