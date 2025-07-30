@@ -10,3 +10,4 @@ itsdangerous==2.1.2
 click==8.1.6
 MarkupSafe==2.1.5
 flask_jwt_extended==4.6.0
+setuptools==80.9.0
