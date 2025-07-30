@@ -48,7 +48,7 @@ class User:
             return None
     
     @staticmethod
-    def create(username, email, password_hash):
+    def create(username, email, password_hash, is_admin=False):  # ✅ Add is_admin with default
         conn = get_db_connection()
         if not conn:
             return None
@@ -58,8 +58,8 @@ class User:
             if cur.fetchone():
                 return None
             cur.execute(
-                "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s) RETURNING id",
-                (username, email, password_hash)
+                "INSERT INTO users (username, email, password_hash, is_admin) VALUES (%s, %s, %s, %s) RETURNING id",
+                (username, email, password_hash, is_admin)  # ✅ Add is_admin here
             )
             user_id = cur.fetchone()[0]
             conn.commit()

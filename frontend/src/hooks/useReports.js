@@ -35,16 +35,16 @@ export const useReports = () => {
   };
 
   const updateReport = async (reportId, updateData) => {
-  console.log('Updating report with ID:', reportId, 'Data:', updateData);
-  try {
-   const updatedReport = await apiClient.updateReport(reportId, { report: updateData });
-
+    console.log('Updating report with ID:', reportId, 'Data:', updateData);
+    try {
+      const updatedReport = await apiClient.updateReport(reportId, updateData); // ✅ FIXED
       await fetchReports(); // Refresh the list
       return updatedReport;
     } catch (error) {
       throw error;
     }
   };
+
 
   const deleteReport = async (reportId) => {
     try {

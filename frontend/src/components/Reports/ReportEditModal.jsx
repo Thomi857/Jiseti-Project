@@ -5,12 +5,13 @@ import Input from '../UI/Input';
 import Textarea from '../UI/Textarea';
 
 const ReportEditModal = ({ report, onClose, onUpdate }) => {
-  const [formData, setFormData] = useState({
-    title: report.title,
-    description: report.description,
-    latitude: report.latitude.toString(),
-    longitude: report.longitude.toString(),
-  });
+const [formData, setFormData] = useState({
+  title: report.title !== 'None' ? report.title : '',
+  description: report.description !== 'None' ? report.description : '',
+  latitude: report.latitude?.toString() || '',
+  longitude: report.longitude?.toString() || '',
+});
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,11 +22,12 @@ const ReportEditModal = ({ report, onClose, onUpdate }) => {
     try {
       await onUpdate({
         id: report.id,
-        title: formData.title,
-        description: formData.description,
+        title: formData.title || '',
+        description: formData.description || '',  // Prevent "None"
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
       });
+
 
     } catch (error) {
       setError(error.response?.data?.error || 'Failed to update report');

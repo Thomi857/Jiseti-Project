@@ -41,17 +41,19 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    
+
     if not all([username, password]):
         return jsonify({'error': 'Username and password are required'}), 400
-    
+
     try:
-        user = User.find_by_username(username)
+        # 👇 Add these 2 lines for debugging:
+        logging.warning(f"Login attempt: username={username}, password={password}")
         
+        user = User.find_by_username(username)
+        logging.warning(f"User from DB: {user}")
+
         if user and check_password_hash(user['password_hash'], password):
-            # FIX: Convert user['id'] to a string before creating the token
             access_token = create_access_token(identity=str(user['id']))
-            
             return jsonify({
                 'access_token': access_token,
                 'user': {
@@ -63,7 +65,7 @@ def login():
             }), 200
         else:
             return jsonify({'error': 'Invalid credentials'}), 401
-            
+
     except Exception as e:
         logging.error(f"Login error: {e}")
         return jsonify({'error': 'Login failed'}), 500

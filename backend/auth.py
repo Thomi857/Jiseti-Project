@@ -30,8 +30,7 @@ def can_delete_report(report, user_id):
     if not report or not user_id:
         return False
     
-    # Only owner can delete and only if status is draft
-    return report['user_id'] == user_id and report['status'] == 'draft'
+    return int(report['user_id']) == int(user_id) and report['status'] == 'draft'
 
 def can_update_status(user_id):
     """Check if user can update report status"""

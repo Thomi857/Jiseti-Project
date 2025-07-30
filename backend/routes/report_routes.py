@@ -94,17 +94,14 @@ def create_report():
 @reports_bp.route('/reports/<int:report_id>', methods=['PUT'])
 @jwt_required()
 def update_report(report_id):
-    """
-    Updates an existing report. Requires a valid JWT token.
-    """
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     if user_id is None:
         logging.warning("Missing user ID in token.")
         return jsonify({'error': 'Authentication required'}), 401
 
     data = request.get_json()
     logging.info(f"PUT request to update report {report_id} by user {user_id}")
-    logging.debug(f"Data received: {data}")
+    logging.warning(f"Incoming update fields: {data}")
 
     try:
         report = Report.get_by_id(report_id)
@@ -115,11 +112,23 @@ def update_report(report_id):
         update_data = {}
 
         # Only owners can update content if status is 'draft'
-        if report['user_id'] == user_id and report['status'] == 'draft':
-            for field in ['title', 'description']:
-                if field in data:
-                    update_data[field] = data[field]
+        logging.warning(f"DEBUG - Report.user_id: {report['user_id']} (type {type(report['user_id'])}), Current user_id: {user_id} (type {type(user_id)})")
+        logging.warning(f"DEBUG - Report.status: {report['status']}")
 
+        if report['user_id'] == user_id and report['status'] == 'draft':
+            for field in ['title', 'description']:  # ← add more fields here
+                value = data.get(field)
+                logging.warning(f"Checking field: {field}, value: {value!r}, type: {type(value)}")
+                try:
+                    value_str = str(value).strip()
+                    logging.warning(f"After strip: '{value_str}'")
+                    if value_str:
+                        update_data[field] = value_str
+                except Exception as e:
+                    logging.warning(f"Failed to process field '{field}': {e}")
+            if 'record_type' in update_data:
+                if update_data['record_type'] not in ['red_flag', 'intervention']:
+                    return jsonify({'error': 'Invalid record type. Must be "red_flag" or "intervention"'}), 400
             if 'latitude' in data or 'longitude' in data:
                 if 'latitude' not in data or 'longitude' not in data:
                     return jsonify({'error': 'Both latitude and longitude are required together'}), 400
@@ -132,7 +141,7 @@ def update_report(report_id):
                     logging.error(f"Invalid lat/lng: {e}")
                     return jsonify({'error': 'Invalid latitude or longitude values'}), 422
 
-        # Admins can change status
+        # Admins can update status
         if 'status' in data:
             valid_statuses = ['draft', 'under_investigation', 'rejected', 'resolved']
             if data['status'] not in valid_statuses:
@@ -141,6 +150,8 @@ def update_report(report_id):
                 update_data['status'] = data['status']
             else:
                 return jsonify({'error': 'Not authorized to change status'}), 403
+
+        logging.warning(f"Accepted update fields: {update_data}")
 
         if not update_data:
             return jsonify({'error': 'No valid or permitted fields to update'}), 400
@@ -163,7 +174,7 @@ def delete_report(report_id):
     Deletes a report. Requires a valid JWT token.
     Permissions (owner, admin, and draft status) are checked.
     """
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())  # add int() here
     if user_id is None:
         logging.warning("Attempted to delete report without valid user_id from JWT.")
         return jsonify({'error': 'Authentication required or invalid token'}), 401

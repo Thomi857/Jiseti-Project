@@ -56,9 +56,18 @@ class ApiClient {
   }
 
   async updateReport(reportId, updateData) {
-    const response = await this.client.put(`/reports/${reportId}`, updateData);
-    return response.data;
-  }
+    // Clean out fields that are null or "None"
+    const cleanedData = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      if (value !== null && value !== 'None') {
+        cleanedData[key] = value;
+      }
+    }
+
+  const response = await this.client.put(`/reports/${reportId}`, cleanedData);
+  return response.data;
+}
+
 
   async deleteReport(reportId) {
     const response = await this.client.delete(`/reports/${reportId}`);

@@ -3,6 +3,7 @@ from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash
 import logging
 from config import Config
+print("DATABASE_CONFIG:", Config.DATABASE_CONFIG)
 
 def get_db_connection():
     """Establish connection to PostgreSQL database"""
