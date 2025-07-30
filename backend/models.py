@@ -1,17 +1,23 @@
+# backend/models.py (or wherever your User and Report classes are)
+
+# Removed: from psycopg2.extras import RealDictCursor
+from psycopg.rows import dict_row # Keep this one
 from database import get_db_connection
-from psycopg2.extras import RealDictCursor
 import logging
+
+# Configure logging if not already done globally
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def _convert_report(report):
     """Ensure latitude and longitude are returned as floats"""
     if not report:
         return None
     try:
-        report = dict(report)
+        # report is already a dict-like object from dict_row, no need for dict(report)
         report['latitude'] = float(report['latitude'])
         report['longitude'] = float(report['longitude'])
     except (KeyError, ValueError, TypeError):
-        logging.warning("Latitude/longitude conversion failed.")
+        logging.warning("Latitude/longitude conversion failed for report.")
     return report
 
 class User:
@@ -21,7 +27,8 @@ class User:
         if not conn:
             return None
         try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # No need for cursor_factory here, as it's set on the connection
+            cur = conn.cursor()
             cur.execute("SELECT * FROM users WHERE username = %s", (username,))
             user = cur.fetchone()
             cur.close()
@@ -37,7 +44,8 @@ class User:
         if not conn:
             return None
         try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # No need for cursor_factory here
+            cur = conn.cursor()
             cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
             user = cur.fetchone()
             cur.close()
@@ -53,21 +61,28 @@ class User:
         if not conn:
             return None
         try:
+            # For writes, a regular cursor is fine, dict_row doesn't affect RETURNING
             cur = conn.cursor()
             cur.execute("SELECT id FROM users WHERE username = %s OR email = %s", (username, email))
             if cur.fetchone():
-                return None
+                cur.close()
+                conn.close()
+                return None # User already exists
+
             cur.execute(
                 "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s) RETURNING id",
                 (username, email, password_hash)
             )
-            user_id = cur.fetchone()[0]
+            user_id = cur.fetchone()[0] # fetchone() returns a tuple for non-dict cursors
             conn.commit()
             cur.close()
             conn.close()
             return user_id
         except Exception as e:
             logging.error(f"Error creating user: {e}")
+            # Ensure rollback on error if commit was attempted
+            if conn:
+                conn.rollback()
             return None
 
 class Report:
@@ -77,7 +92,8 @@ class Report:
         if not conn:
             return []
         try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # No need for cursor_factory here
+            cur = conn.cursor()
             cur.execute('''
                 SELECT r.*, u.username 
                 FROM reports r 
@@ -98,7 +114,8 @@ class Report:
         if not conn:
             return None
         try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # No need for cursor_factory here
+            cur = conn.cursor()
             cur.execute("SELECT * FROM reports WHERE id = %s", (report_id,))
             report = cur.fetchone()
             cur.close()
@@ -114,7 +131,8 @@ class Report:
         if not conn:
             return None
         try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # No need for cursor_factory here
+            cur = conn.cursor()
             cur.execute('''
                 INSERT INTO reports (title, description, record_type, latitude, longitude, user_id) 
                 VALUES (%s, %s, %s, %s, %s, %s) 
@@ -127,6 +145,8 @@ class Report:
             return _convert_report(report)
         except Exception as e:
             logging.error(f"Error creating report: {e}")
+            if conn:
+                conn.rollback()
             return None
     
     @staticmethod
@@ -135,17 +155,25 @@ class Report:
         if not conn:
             return None
         try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
+            # No need for cursor_factory here
+            cur = conn.cursor()
             update_fields = []
             params = []
             for field, value in update_data.items():
                 if field in ['title', 'description', 'latitude', 'longitude', 'status']:
                     update_fields.append(f'{field} = %s')
                     params.append(value)
+            
             if not update_fields:
+                cur.close()
+                conn.close()
                 return None
+            
             update_fields.append('updated_at = CURRENT_TIMESTAMP')
-            params.append(report_id)
+            
+            # Append report_id to params for the WHERE clause
+            params.append(report_id) 
+            
             cur.execute(f'''
                 UPDATE reports 
                 SET {', '.join(update_fields)}
@@ -159,6 +187,8 @@ class Report:
             return _convert_report(updated_report)
         except Exception as e:
             logging.error(f"Error updating report: {e}")
+            if conn:
+                conn.rollback()
             return None
     
     @staticmethod
@@ -176,4 +206,6 @@ class Report:
             return deleted
         except Exception as e:
             logging.error(f"Error deleting report: {e}")
+            if conn:
+                conn.rollback()
             return False
