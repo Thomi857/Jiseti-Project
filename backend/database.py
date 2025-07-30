@@ -5,7 +5,6 @@ import logging
 from config import Config
 
 def get_db_connection():
-    """Establish connection to PostgreSQL database"""
     try:
         return connect(**Config.DATABASE_CONFIG, row_factory=dict_row)
     except Exception as e:
@@ -13,14 +12,12 @@ def get_db_connection():
         return None
 
 def init_db():
-    """Initialize tables and seed default admin user"""
     conn = get_db_connection()
     if not conn:
         return False
 
     try:
         with conn.cursor() as cur:
-            # Users table
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
@@ -31,8 +28,6 @@ def init_db():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-
-            # Reports table
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS reports (
                     id SERIAL PRIMARY KEY,
@@ -47,8 +42,6 @@ def init_db():
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-
-            # Create default admin user
             cur.execute("SELECT id FROM users WHERE username = 'admin'")
             if not cur.fetchone():
                 admin_password = generate_password_hash('admin123')
@@ -56,10 +49,8 @@ def init_db():
                     INSERT INTO users (username, email, password_hash, is_admin)
                     VALUES (%s, %s, %s, %s)
                 ''', ('admin', 'admin@jiseti.com', admin_password, True))
-
             conn.commit()
         return True
-
     except Exception as e:
         logging.error(f"Database initialization error: {e}")
         return False
