@@ -1,20 +1,29 @@
 from dotenv import load_dotenv
 load_dotenv()
-from flask import Flask, request, jsonify
+
+from flask import Flask, render_template, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import logging
-
 from config import Config
 from database import init_db
 from routes.auth_routes import auth_bp
 from routes.report_routes import reports_bp
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../frontend/build", template_folder="../frontend/build")
 app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
 jwt = JWTManager(app)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Adjust origins for production
+
+# Serve React frontend
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    try:
+        return render_template('index.html')
+    except:
+        return send_from_directory(app.static_folder, 'index.html')
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api')
