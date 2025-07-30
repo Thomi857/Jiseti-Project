@@ -76,9 +76,6 @@ const value = {
 };
 
 
-
-
-
   return (
     <AuthContext.Provider value={value}>
       {children}
