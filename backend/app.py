@@ -10,11 +10,11 @@ from database import init_db
 from routes.auth_routes import auth_bp
 from routes.report_routes import reports_bp
 
-app = Flask(__name__, static_folder="../frontend/build", template_folder="../frontend/build")
+app = Flask(__name__, static_folder="../frontend", template_folder="../frontend")
 app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
 jwt = JWTManager(app)
-CORS(app, resources={r"/api/*": {"origins": "*"}})  # Adjust origins for production
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Serve React frontend
 @app.route('/', defaults={'path': ''})
