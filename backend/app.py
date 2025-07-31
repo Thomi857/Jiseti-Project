@@ -16,14 +16,13 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
 jwt = JWTManager(app)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Serve React frontend
+# Serve React frontend index.html
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    try:
-        return render_template('index.html')
-    except:
+    if path != "" and not path.endswith(".js") and not path.endswith(".css"):
         return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory(app.static_folder, path)
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api')
