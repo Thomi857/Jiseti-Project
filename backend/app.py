@@ -13,7 +13,7 @@ app = Flask(__name__, static_folder="../frontend/dist", template_folder="../fron
 app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
 jwt = JWTManager(app)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "https://jiseti-project.onrender.com"}})
 
 # Serve React frontend
 @app.route('/', defaults={'path': ''})
