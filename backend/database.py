@@ -1,11 +1,11 @@
-from psycopg import connect
+from psycopg import connect, rows
 import logging
 
 def get_db_connection():
     """Establish connection to PostgreSQL database"""
     try:
         from config import Config
-        return connect(Config.DATABASE_CONFIG, row_factory=dict_row)
+        return connect(Config.DATABASE_CONFIG, row_factory=rows.dict_row)
     except Exception as e:
         logging.error(f"Database connection error: {e}")
         return None
