@@ -139,3 +139,4 @@ def init_db():
     finally:
         if conn: # Ensure conn exists before closing
             conn.close()
+
