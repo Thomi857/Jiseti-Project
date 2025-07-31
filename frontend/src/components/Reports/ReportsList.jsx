@@ -1,3 +1,4 @@
+// ReportsList.jsx
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import ReportCard from './ReportCard';
@@ -15,10 +16,8 @@ const ReportsList = () => {
 
   const { isAuthenticated, user } = useAuth();
 
-  // ✅ Completely skip rendering if user is admin
-  if (user?.is_admin) {
-    return null;
-  }
+  // REMOVE THE ADMIN CHECK HERE. Admins should see the list.
+  // Permissions for individual actions (edit/delete) will be handled in ReportCard.
 
   const handleEditReport = (report) => {
     setSelectedReport(report);
@@ -26,6 +25,7 @@ const ReportsList = () => {
   };
 
   const handleDeleteReport = async (report) => {
+    // IMPORTANT: Replace window.confirm with a custom modal UI as per instructions
     if (window.confirm('Are you sure you want to delete this report?')) {
       try {
         await deleteReport(report.id);
@@ -45,10 +45,17 @@ const ReportsList = () => {
   };
 
   const filteredReports = reports.filter(report => {
+    // If the user is an admin, show all reports regardless of owner
+    // Otherwise, show only reports owned by the current user
+    if (!user?.is_admin && isAuthenticated && report.user_id !== user?.id) {
+        return false;
+    }
+
     if (filter !== 'all' && report.status !== filter) return false;
     if (typeFilter !== 'all' && report.record_type !== typeFilter) return false;
     return true;
   });
+
 
   if (loading) {
     return (
@@ -150,4 +157,3 @@ const ReportsList = () => {
 };
 
 export default ReportsList;
-
