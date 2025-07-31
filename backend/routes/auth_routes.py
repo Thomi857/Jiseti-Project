@@ -19,14 +19,13 @@ def register():
     try:
         password_hash = generate_password_hash(password)
         user_id = User.create(username, email, password_hash)
-
         if not user_id:
             return jsonify({'error': 'Username or email already exists'}), 400
 
         access_token = create_access_token(identity=str(user_id))
-
-        # Fetch full user object after creation
         user = User.find_by_id(user_id)
+        if not user:
+            return jsonify({'error': 'User not found after creation'}), 500
 
         return jsonify({
             'access_token': access_token,
@@ -37,11 +36,9 @@ def register():
                 'is_admin': user.get('is_admin', False)
             }
         }), 201
-
     except Exception as e:
-        logging.exception("Registration failed")
-        return jsonify({'error': 'Registration failed'}), 500
-
+        logging.exception("Registration failed: %s", str(e))
+        return jsonify({'error': 'Registration failed', 'details': str(e)}), 500
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -54,10 +51,8 @@ def login():
 
     try:
         user = User.find_by_username(username)
-
         if user and check_password_hash(user['password_hash'], password):
             access_token = create_access_token(identity=str(user['id']))
-
             return jsonify({
                 'access_token': access_token,
                 'user': {
@@ -67,9 +62,7 @@ def login():
                     'is_admin': user.get('is_admin', False)
                 }
             }), 200
-
         return jsonify({'error': 'Invalid credentials'}), 401
-
     except Exception as e:
-        logging.exception("Login failed")
-        return jsonify({'error': 'Login failed'}), 500
+        logging.exception("Login failed: %s", str(e))
+        return jsonify({'error': 'Login failed', 'details': str(e)}), 500
