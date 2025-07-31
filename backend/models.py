@@ -193,6 +193,7 @@
 #         finally:
 #             conn.close()
 # models.py
+# models.py
 from psycopg.rows import dict_row
 from database import get_db_connection
 import logging
@@ -212,7 +213,7 @@ def _convert_report(report):
         report['latitude'] = float(report['latitude'])
         report['longitude'] = float(report['longitude'])
     except (KeyError, ValueError, TypeError):
-        logging.warning("Latitude/longitude conversion failed for report.", exc_info=True) # Added exc_info
+        logging.warning("Latitude/longitude conversion failed for report.", exc_info=True)
     return report
 
 class User:
@@ -233,10 +234,10 @@ class User:
                     logging.info(f"User.find_by_username: User '{username}' not found.")
                 return user_data
         except Exception as e:
-            logging.error(f"User.find_by_username: Error finding user '{username}': {e}", exc_info=True) # Added exc_info
+            logging.error(f"User.find_by_username: Error finding user '{username}': {e}", exc_info=True)
             return None
         finally:
-            if conn: # Ensure conn exists before closing
+            if conn:
                 conn.close()
 
     @staticmethod
@@ -256,10 +257,10 @@ class User:
                     logging.info(f"User.find_by_id: User with ID: {user_id} not found.")
                 return user_data
         except Exception as e:
-            logging.error(f"User.find_by_id: Error finding user by ID {user_id}: {e}", exc_info=True) # Added exc_info
+            logging.error(f"User.find_by_id: Error finding user by ID {user_id}: {e}", exc_info=True)
             return None
         finally:
-            if conn: # Ensure conn exists before closing
+            if conn:
                 conn.close()
 
     @staticmethod
@@ -270,35 +271,36 @@ class User:
             logging.error("User.create: Failed to get database connection.")
             return None
         try:
-            with conn.cursor() as cur:  # Regular cursor for INSERT
+            # Use a cursor that returns dictionaries because get_db_connection sets row_factory
+            with conn.cursor(row_factory=dict_row) as cur: # Explicitly setting dict_row here for clarity, though connection already has it
                 logging.info(f"User.create: Checking for existing user '{username}' or '{email}'.")
                 cur.execute("SELECT id FROM users WHERE username = %s OR email = %s", (username, email))
                 if cur.fetchone():
                     logging.warning(f"User.create: User with username '{username}' or email '{email}' already exists.")
-                    return None  # User already exists
+                    return None
                 
                 logging.info(f"User.create: Inserting new user '{username}' into database.")
                 cur.execute(
                     "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s) RETURNING id",
                     (username, email, password_hash)
                 )
-                user_id_row = cur.fetchone() # Get the row containing the ID
+                user_id_row = cur.fetchone() # This will be {'id': <value>}
                 if user_id_row:
-                    user_id = user_id_row[0]
+                    user_id = user_id_row['id'] # FIX: Access by key 'id' instead of index 0
                     conn.commit()
                     logging.info(f"User.create: Successfully created user '{username}' with ID: {user_id}")
                     return user_id
                 else:
                     logging.error(f"User.create: INSERT statement did not return an ID for user '{username}'.")
-                    conn.rollback() # Rollback if no ID was returned
+                    conn.rollback()
                     return None
         except Exception as e:
-            logging.error(f"User.create: An error occurred while creating user '{username}': {e}", exc_info=True) # Added exc_info
+            logging.error(f"User.create: An error occurred while creating user '{username}': {e}", exc_info=True)
             if conn:
-                conn.rollback() # Ensure rollback on error
+                conn.rollback()
             return None
         finally:
-            if conn: # Ensure conn exists before closing
+            if conn:
                 conn.close()
 
 class Report:
@@ -323,7 +325,7 @@ class Report:
                 logging.info(f"Report.get_all: Successfully fetched {len(reports)} reports.")
                 return [_convert_report(report) for report in reports]
         except Exception as e:
-            logging.error(f"Report.get_all: Error fetching all reports: {e}", exc_info=True) # Added exc_info
+            logging.error(f"Report.get_all: Error fetching all reports: {e}", exc_info=True)
             return []
         finally:
             if conn:
@@ -346,7 +348,7 @@ class Report:
                     logging.info(f"Report.get_by_id: Report with ID: {report_id} not found.")
                 return _convert_report(report)
         except Exception as e:
-            logging.error(f"Report.get_by_id: Error getting report with ID {report_id}: {e}", exc_info=True) # Added exc_info
+            logging.error(f"Report.get_by_id: Error getting report with ID {report_id}: {e}", exc_info=True)
             return None
         finally:
             if conn:
@@ -374,7 +376,7 @@ class Report:
                 logging.info(f"Report.create: Successfully created report '{title}'.")
                 return _convert_report(report)
         except Exception as e:
-            logging.error(f"Report.create: Error creating report '{title}': {e}", exc_info=True) # Added exc_info
+            logging.error(f"Report.create: Error creating report '{title}': {e}", exc_info=True)
             if conn:
                 conn.rollback()
             return None
@@ -419,7 +421,7 @@ class Report:
                     logging.warning(f"Report.update: Report with ID: {report_id} not found for update.")
                 return _convert_report(updated_report)
         except Exception as e:
-            logging.error(f"Report.update: Error updating report with ID {report_id}: {e}", exc_info=True) # Added exc_info
+            logging.error(f"Report.update: Error updating report with ID {report_id}: {e}", exc_info=True)
             if conn:
                 conn.rollback()
             return None
@@ -445,10 +447,11 @@ class Report:
                     logging.warning(f"Report.delete: Report with ID: {report_id} not found for deletion.")
                 return deleted
         except Exception as e:
-            logging.error(f"Report.delete: Error deleting report with ID {report_id}: {e}", exc_info=True) # Added exc_info
+            logging.error(f"Report.delete: Error deleting report with ID {report_id}: {e}", exc_info=True)
             if conn:
                 conn.rollback()
             return False
         finally:
             if conn:
                 conn.close()
+
