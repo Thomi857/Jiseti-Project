@@ -1,3 +1,4 @@
+// ReportCard.jsx
 import {
   MapPinIcon,
   CalendarIcon,
@@ -20,16 +21,24 @@ import ReportMap from './ReportMap';
 const ReportCard = ({ report, onEdit, onDelete }) => {
   const { user } = useAuth();
 
-  const canEdit = user && user.id === report.user_id && report.status === 'pending';
-  const canDelete = user && user.id === report.user_id && report.status === 'pending';
+  // Determine if the user can edit/delete
+  // Admins can edit/delete any report.
+  // Regular users can only edit/delete their own reports if the status is 'draft'.
+  const isOwner = user && user.id === report.user_id;
+  const isDraft = report.status === 'draft'; // Changed from 'pending' to 'draft' based on DB schema
+
+  const canEdit = user?.is_admin || (isOwner && isDraft);
+  const canDelete = user?.is_admin || (isOwner && isDraft);
 
   const handleDelete = async () => {
-    try {
-      await apiClient.deleteReport(report.id); // ✅ fixed method call
-      onDelete(report.id);
-    } catch (error) {
-      console.error('Failed to delete report:', error);
-      alert('Failed to delete report. Please try again.');
+    // IMPORTANT: Replace window.confirm with a custom modal UI as per instructions
+    if (window.confirm('Are you sure you want to delete this report?')) {
+      try {
+        await onDelete(report.id); // Call the onDelete prop from ReportsList
+      } catch (error) {
+        console.error('Failed to delete report:', error);
+        alert('Failed to delete report. Please try again.');
+      }
     }
   };
 
