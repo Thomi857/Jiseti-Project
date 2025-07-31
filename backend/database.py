@@ -1,17 +1,17 @@
 from psycopg import connect
-from psycopg.rows import dict_row
-from werkzeug.security import generate_password_hash
 import logging
-from config import Config
 
 def get_db_connection():
+    """Establish connection to PostgreSQL database"""
     try:
-        return connect(**Config.DATABASE_CONFIG, row_factory=dict_row)
+        from config import Config
+        return connect(Config.DATABASE_CONFIG, row_factory=dict_row)
     except Exception as e:
         logging.error(f"Database connection error: {e}")
         return None
 
 def init_db():
+    """Initialize tables and seed default admin user"""
     conn = get_db_connection()
     if not conn:
         return False
@@ -44,6 +44,7 @@ def init_db():
             ''')
             cur.execute("SELECT id FROM users WHERE username = 'admin'")
             if not cur.fetchone():
+                from werkzeug.security import generate_password_hash
                 admin_password = generate_password_hash('admin123')
                 cur.execute('''
                     INSERT INTO users (username, email, password_hash, is_admin)
@@ -54,3 +55,5 @@ def init_db():
     except Exception as e:
         logging.error(f"Database initialization error: {e}")
         return False
+    finally:
+        conn.close()
