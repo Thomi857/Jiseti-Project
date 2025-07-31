@@ -302,8 +302,56 @@ class User:
                 conn.close()
 
 class Report:
-    # ... (rest of your Report class methods, add similar logging)
-    # For example, in create:
+    @staticmethod
+    def get_all():
+        logging.info("Report.get_all: Attempting to fetch all reports.")
+        conn = get_db_connection()
+        if not conn:
+            logging.error("Report.get_all: Failed to get database connection.")
+            return []
+        try:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(
+                    """
+                    SELECT r.*, u.username
+                    FROM reports r
+                    JOIN users u ON r.user_id = u.id
+                    ORDER BY r.created_at DESC
+                    """
+                )
+                reports = cur.fetchall()
+                logging.info(f"Report.get_all: Successfully fetched {len(reports)} reports.")
+                return [_convert_report(report) for report in reports]
+        except Exception as e:
+            logging.error(f"Report.get_all: Error fetching all reports: {e}", exc_info=True) # Added exc_info
+            return []
+        finally:
+            if conn:
+                conn.close()
+
+    @staticmethod
+    def get_by_id(report_id):
+        logging.info(f"Report.get_by_id: Attempting to fetch report with ID: {report_id}")
+        conn = get_db_connection()
+        if not conn:
+            logging.error("Report.get_by_id: Failed to get database connection.")
+            return None
+        try:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute("SELECT * FROM reports WHERE id = %s", (report_id,))
+                report = cur.fetchone()
+                if report:
+                    logging.info(f"Report.get_by_id: Found report with ID: {report_id}.")
+                else:
+                    logging.info(f"Report.get_by_id: Report with ID: {report_id} not found.")
+                return _convert_report(report)
+        except Exception as e:
+            logging.error(f"Report.get_by_id: Error getting report with ID {report_id}: {e}", exc_info=True) # Added exc_info
+            return None
+        finally:
+            if conn:
+                conn.close()
+
     @staticmethod
     def create(title, description, record_type, latitude, longitude, user_id):
         logging.info(f"Report.create: Attempting to create report '{title}' for user {user_id}")
@@ -330,6 +378,77 @@ class Report:
             if conn:
                 conn.rollback()
             return None
+        finally:
+            if conn:
+                conn.close()
+
+    @staticmethod
+    def update(report_id, update_data):
+        logging.info(f"Report.update: Attempting to update report with ID: {report_id}")
+        conn = get_db_connection()
+        if not conn:
+            logging.error("Report.update: Failed to get database connection.")
+            return None
+        try:
+            with conn.cursor(row_factory=dict_row) as cur:
+                update_fields = []
+                params = []
+                for field, value in update_data.items():
+                    if field in ['title', 'description', 'latitude', 'longitude', 'status']:
+                        update_fields.append(f"{field} = %s")
+                        params.append(value)
+                if not update_fields:
+                    logging.warning(f"Report.update: No valid fields provided for update for report ID: {report_id}.")
+                    return None
+                update_fields.append('updated_at = CURRENT_TIMESTAMP')
+                params.append(report_id) # Add report_id to params for WHERE clause
+                cur.execute(
+                    f"""
+                    UPDATE reports
+                    SET {', '.join(update_fields)}
+                    WHERE id = %s
+                    RETURNING *
+                    """,
+                    params
+                )
+                updated_report = cur.fetchone()
+                conn.commit()
+                if updated_report:
+                    logging.info(f"Report.update: Successfully updated report with ID: {report_id}.")
+                else:
+                    logging.warning(f"Report.update: Report with ID: {report_id} not found for update.")
+                return _convert_report(updated_report)
+        except Exception as e:
+            logging.error(f"Report.update: Error updating report with ID {report_id}: {e}", exc_info=True) # Added exc_info
+            if conn:
+                conn.rollback()
+            return None
+        finally:
+            if conn:
+                conn.close()
+
+    @staticmethod
+    def delete(report_id):
+        logging.info(f"Report.delete: Attempting to delete report with ID: {report_id}")
+        conn = get_db_connection()
+        if not conn:
+            logging.error("Report.delete: Failed to get database connection.")
+            return False
+        try:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM reports WHERE id = %s", (report_id,))
+                deleted = cur.rowcount > 0
+                conn.commit()
+                if deleted:
+                    logging.info(f"Report.delete: Successfully deleted report with ID: {report_id}.")
+                else:
+                    logging.warning(f"Report.delete: Report with ID: {report_id} not found for deletion.")
+                return deleted
+        except Exception as e:
+            logging.error(f"Report.delete: Error deleting report with ID {report_id}: {e}", exc_info=True) # Added exc_info
+            if conn:
+                conn.rollback()
+            return False
         finally:
             if conn:
                 conn.close()
