@@ -19,10 +19,16 @@ jwt = JWTManager(app)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": "http://localhost:5173"}},
+    resources={r"/api/*": {
+        "origins": [
+            "http://localhost:5173",                    # local dev
+            "https://<your-site>.netlify.app"          # deployed frontend
+        ]
+    }},
     supports_credentials=True,
     allow_headers=["Content-Type", "Authorization"]
 )
+
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api')
