@@ -8,6 +8,7 @@ import Button from '../UI/Button';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Textarea from '../UI/Textarea';
+import MapView from '../MapView'; // adjust path if necessary
 
 const CreateReportForm = () => {
   const [formData, setFormData] = useState({
@@ -161,6 +162,24 @@ const CreateReportForm = () => {
               />
             </div>
           </div>
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold mb-2">Selected Location</h2>
+              {formData.latitude && formData.longitude ? (
+                <MapView
+                  lat={parseFloat(formData.latitude)}
+                  lng={parseFloat(formData.longitude)}
+                  onLocationSelect={({ latitude, longitude }) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude: latitude.toFixed(6),
+                      longitude: longitude.toFixed(6),
+                    }));
+                  }}
+                />
+              ) : (
+                <p className="text-gray-500 text-sm">Enter coordinates or use current location to preview the map.</p>
+              )}
+            </div>
 
           <div className="flex items-center justify-center">
             <Button
