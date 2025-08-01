@@ -8,7 +8,7 @@ import Button from '../UI/Button';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Textarea from '../UI/Textarea';
-import MapView from '../MapView'; // adjust path if necessary
+import MapView from '../components/MapView'; // adjust path if necessary
 
 const CreateReportForm = () => {
   const [formData, setFormData] = useState({

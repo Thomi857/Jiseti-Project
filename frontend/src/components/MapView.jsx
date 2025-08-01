@@ -21,7 +21,7 @@ const ClickHandler = ({ onLocationSelect }) => {
 };
 
 const MapView = ({ lat, lng, onLocationSelect }) => (
-  <div style={{ height: '300px', width: '100%' }}>
+  <div style={{ height: '300px', width: '100%', border: '2px solid red' }}>
     <MapContainer center={[lat, lng]} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
       <TileLayer
         attribution='&copy; OpenStreetMap contributors'
@@ -34,5 +34,6 @@ const MapView = ({ lat, lng, onLocationSelect }) => (
     </MapContainer>
   </div>
 );
+
 
 export default MapView;
