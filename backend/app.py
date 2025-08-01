@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import logging
 
+from flask import send_from_directory
 from config import Config
 from database import init_db
 from routes.auth_routes import auth_bp
@@ -32,6 +33,11 @@ CORS(
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(reports_bp, url_prefix='/api')
+
+
+@app.route("/")
+def index():
+    return send_from_directory("static", "index.html")
 
 # Main run block
 if __name__ == '__main__':
