@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaf
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix missing default icons in some bundlers
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -21,25 +20,25 @@ const ClickHandler = ({ onLocationSelect }) => {
   return null;
 };
 
+
+
 const MapView = ({ lat, lng, onLocationSelect }) => {
   return (
-    <MapContainer
-      center={[lat, lng]}
-      zoom={15}
-      scrollWheelZoom={true}
-      style={{ height: '300px', width: '100%' }}
-      className="rounded-lg"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Marker position={[lat, lng]}>
-        <Popup>Selected location</Popup>
-      </Marker>
-      {onLocationSelect && <ClickHandler onLocationSelect={onLocationSelect} />}
-    </MapContainer>
+    <div style={{ height: '300px', width: '100%' }}>
+      <MapContainer center={[lat, lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+        <TileLayer
+          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        />
+        <Marker position={[lat, lng]}>
+          <Popup>Selected location</Popup>
+        </Marker>
+        {onLocationSelect && <ClickHandler onLocationSelect={onLocationSelect} />}
+      </MapContainer>
+    </div>
   );
 };
 
+
 export default MapView;
+
