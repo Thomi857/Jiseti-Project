@@ -216,19 +216,17 @@ const ReportsList = ({ reports }) => {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         title="Confirm Deletion"
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setShowDeleteModal(false)} variant="outline">
-              Cancel
-            </Button>
-            <Button onClick={handleDelete} variant="danger" loading={isDeleting}>
-              Delete
-            </Button>
-          </div>
-        }
       >
         <p>Are you sure you want to delete this report? This action cannot be undone.</p>
         {reportToDelete && <p className="mt-2 text-sm text-gray-500">You are about to delete: **{reportToDelete.title}**</p>}
+        <div className="flex justify-end gap-2 mt-6">
+          <Button onClick={() => setShowDeleteModal(false)} variant="outline">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} variant="danger" loading={isDeleting}>
+            Delete
+          </Button>
+        </div>
       </Modal>
     </>
   );
