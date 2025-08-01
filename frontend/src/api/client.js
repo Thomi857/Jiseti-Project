@@ -1,79 +1,80 @@
-import axios from 'axios';
+  import axios from 'axios';
 
-// Example in client.js
-const API_BASE_URL = "https://jiseti-full.onrender.com/"
+  // Example in client.js
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-class ApiClient {
-  constructor() {
-    this.client = axios.create({
-      baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
 
-    this.client.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('access_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+  class ApiClient {
+    constructor() {
+      this.client = axios.create({
+        baseURL: API_BASE_URL,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      this.client.interceptors.request.use(
+        (config) => {
+          const token = localStorage.getItem('access_token');
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+          return config;
+        },
+        (error) => Promise.reject(error)
+      );
+
+      this.client.interceptors.response.use(
+        (response) => response,
+        (error) => {
+          if (error.response?.status === 401) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          }
+          return Promise.reject(error);
         }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  async register(userData) {
-    const response = await this.client.post('/register', userData);
-    return response.data;
-  }
-
-  async login(credentials) {
-    const response = await this.client.post('/login', credentials);
-    return response.data;
-  }
-
-  async getReports() {
-    const response = await this.client.get('/reports');
-    return response.data;
-  }
-
-  async createReport(reportData) {
-    const response = await this.client.post('/reports', reportData);
-    return response.data;
-  }
-
-  async updateReport(reportId, updateData) {
-    // Clean out fields that are null or "None"
-    const cleanedData = {};
-    for (const [key, value] of Object.entries(updateData)) {
-      if (value !== null && value !== 'None') {
-        cleanedData[key] = value;
-      }
+      );
     }
 
-  const response = await this.client.put(`/reports/${reportId}`, cleanedData);
-  return response.data;
-}
+    async register(userData) {
+      const response = await this.client.post('/register', userData);
+      return response.data;
+    }
 
+    async login(credentials) {
+      const response = await this.client.post('/login', credentials);
+      return response.data;
+    }
 
-  async deleteReport(reportId) {
-    const response = await this.client.delete(`/reports/${reportId}`);
+    async getReports() {
+      const response = await this.client.get('/reports');
+      return response.data;
+    }
+
+    async createReport(reportData) {
+      const response = await this.client.post('/reports', reportData);
+      return response.data;
+    }
+
+    async updateReport(reportId, updateData) {
+      // Clean out fields that are null or "None"
+      const cleanedData = {};
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== null && value !== 'None') {
+          cleanedData[key] = value;
+        }
+      }
+
+    const response = await this.client.put(`/reports/${reportId}`, cleanedData);
     return response.data;
   }
-}
 
-export default new ApiClient();
+
+    async deleteReport(reportId) {
+      const response = await this.client.delete(`/reports/${reportId}`);
+      return response.data;
+    }
+  }
+
+  export default new ApiClient();
