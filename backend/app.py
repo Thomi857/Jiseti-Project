@@ -1,3 +1,4 @@
+import os  # at the top
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -35,13 +36,14 @@ app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(reports_bp, url_prefix='/api')
 
 
-@app.route("/")
-def index():
-    return send_from_directory("static", "index.html")
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join('static', path)):
+        return send_from_directory('static', path)
+    else:
+        return send_from_directory('static', 'index.html')
 
-@app.route("/<path:path>")
-def serve_static(path):
-    return send_from_directory("static", path)
 
 @app.errorhandler(404)
 def spa_fallback(e):
