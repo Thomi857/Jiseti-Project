@@ -4,4 +4,4 @@
   publish = "dist"
 
 [build.environment]
-  VITE_API_URL = "https://jiseti-full.onrender.com"
+  VITE_API_URL = "https://jiseti-full.onrender.com/api"
