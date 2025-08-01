@@ -6,19 +6,6 @@ import logging
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/debug/users', methods=['GET'])
-def debug_users():
-    from database import get_db_connection
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({'error': 'DB connection failed'}), 500
-    cur = conn.cursor()
-    cur.execute("SELECT username, email FROM users")
-    users = cur.fetchall()
-    cur.close()
-    conn.close()
-    return jsonify(users)
-
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -76,9 +63,22 @@ def login():
                     'is_admin': user['is_admin']
                 }
             }), 200
+            
+            
         else:
             return jsonify({'error': 'Invalid credentials'}), 401
 
     except Exception as e:
         logging.error(f"Login error: {e}")
         return jsonify({'error': 'Login failed'}), 500
+    
+@auth_bp.route('/debug/users', methods=['GET'])
+def debug_users():
+    from database import get_db_connection
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, username, email FROM users")
+    users = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify(users)
