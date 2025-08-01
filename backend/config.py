@@ -6,7 +6,7 @@ import urllib.parse as urlparse
 load_dotenv()
 
 class Config:
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jiseti77')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
 
     DATABASE_URL = os.getenv('DATABASE_URL')
