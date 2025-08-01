@@ -39,6 +39,16 @@ app.register_blueprint(reports_bp, url_prefix='/api')
 def index():
     return send_from_directory("static", "index.html")
 
+@app.route("/<path:path>")
+def serve_static(path):
+    return send_from_directory("static", path)
+
+@app.errorhandler(404)
+def spa_fallback(e):
+    return send_from_directory("static", "index.html")
+
+
+
 # Main run block
 if __name__ == '__main__':
     if init_db():
