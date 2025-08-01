@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 // Example in client.js
-const API_BASE_URL = 'https://your-backend-service-name.onrender.com/api';
-
+const API_BASE_URL = "https://jiseti-full.onrender.com/"
 
 class ApiClient {
   constructor() {
