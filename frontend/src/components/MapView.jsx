@@ -20,25 +20,19 @@ const ClickHandler = ({ onLocationSelect }) => {
   return null;
 };
 
-
-
-const MapView = ({ lat, lng, onLocationSelect }) => {
-  return (
-    <div style={{ height: '300px', width: '100%' }}>
-      <MapContainer center={[lat, lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
-        <TileLayer
-          attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        />
-        <Marker position={[lat, lng]}>
-          <Popup>Selected location</Popup>
-        </Marker>
-        {onLocationSelect && <ClickHandler onLocationSelect={onLocationSelect} />}
-      </MapContainer>
-    </div>
-  );
-};
-
+const MapView = ({ lat, lng, onLocationSelect }) => (
+  <div style={{ height: '300px', width: '100%' }}>
+    <MapContainer center={[lat, lng]} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      />
+      <Marker position={[lat, lng]}>
+        <Popup>Selected Location</Popup>
+      </Marker>
+      {onLocationSelect && <ClickHandler onLocationSelect={onLocationSelect} />}
+    </MapContainer>
+  </div>
+);
 
 export default MapView;
-
