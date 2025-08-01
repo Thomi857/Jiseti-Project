@@ -19,15 +19,14 @@ jwt = JWTManager(app)
 
 CORS(
     app,
-    resources={r"/api/*": {
-        "origins": [
-            "http://localhost:5173",                    # local dev
-            "https://<your-site>.netlify.app"          # deployed frontend
-        ]
-    }},
+    resources={r"/api/*": {"origins": [
+        "http://localhost:5173",
+        "https://jiseti-corp.netlify.app"
+    ]}},
     supports_credentials=True,
     allow_headers=["Content-Type", "Authorization"]
 )
+
 
 
 # Register blueprints
