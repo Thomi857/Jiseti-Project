@@ -1,3 +1,5 @@
+import os
+from urllib.parse import urlparse
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash
@@ -5,13 +7,31 @@ import logging
 from config import Config
 print("DATABASE_CONFIG:", Config.DATABASE_CONFIG)
 
+
+from urllib.parse import urlparse
+print("DATABASE_CONFIG:", Config.DATABASE_CONFIG)
 def get_db_connection():
-    """Establish connection to PostgreSQL database"""
+    """Establish connection to PostgreSQL using DATABASE_URL (Render-compatible)"""
+    db_url = os.getenv('DATABASE_URL')
+    if not db_url:
+        logging.error("DATABASE_URL is not set in environment variables.")
+        return None
+
     try:
-        return psycopg2.connect(**Config.DATABASE_CONFIG)
+        result = urlparse(db_url)
+        return psycopg2.connect(
+            dbname=result.path[1:],  # strip leading slash
+            user=result.username,
+            password=result.password,
+            host=result.hostname,
+            port=result.port,
+            cursor_factory=RealDictCursor
+        )
     except Exception as e:
         logging.error(f"Database connection error: {e}")
         return None
+
+
 
 def init_db():
     """Initialize tables and seed default admin user"""

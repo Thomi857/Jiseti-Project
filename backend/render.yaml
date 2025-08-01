@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: jiseti-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: flask run --host=0.0.0.0 --port=10000
+    envVars:
+      - key: FLASK_APP
+        value: app.py
+      - key: FLASK_ENV
+        value: production
+      - key: JWT_SECRET_KEY
+        value: your-real-secret-key-here
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jiseti-db
+          property: connectionString
+
+databases:
+  - name: jiseti-db
+    plan: free
