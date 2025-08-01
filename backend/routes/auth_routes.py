@@ -75,10 +75,17 @@ def login():
 @auth_bp.route('/debug/users', methods=['GET'])
 def debug_users():
     from database import get_db_connection
+    import logging
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, username, email FROM users")
-    users = cur.fetchall()
-    cur.close()
-    conn.close()
-    return jsonify(users)
+    if not conn:
+        return jsonify({"error": "DB connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, username, email FROM users")
+        users = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(users)
+    except Exception as e:
+        logging.error(f"DEBUG USERS ERROR: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
