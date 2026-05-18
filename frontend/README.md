@@ -6,3 +6,14 @@ Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Deployment Configuration
+
+This app reads the backend API URL from an environment variable at build time.
+
+- `VITE_API_BASE_URL`: The full backend API base URL, e.g. `https://api.example.com/api`
+
+Example `.env` contents for frontend deployment:
+
+```
+VITE_API_BASE_URL=https://example-backend.com/api
+```

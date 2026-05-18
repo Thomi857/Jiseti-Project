@@ -9,18 +9,27 @@ from database import init_db
 from routes.auth_routes import auth_bp
 from routes.report_routes import reports_bp
 import sys
+import os
 
 app = Flask(__name__, static_folder="../frontend/dist", template_folder="../frontend/dist")
 app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
 jwt = JWTManager(app)
+
+allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS')
+if allowed_origins:
+    parsed_origins = [origin.strip() for origin in allowed_origins.split(',') if origin.strip()]
+    origins = '*' if parsed_origins == ['*'] else parsed_origins
+else:
+    origins = [
+        "https://jiseti-project.onrender.com",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
 CORS(app, resources={
     r"/api/*": {
-        "origins": [
-            "https://jiseti-project.onrender.com",
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-        ]
+        "origins": origins
     }
 })
 

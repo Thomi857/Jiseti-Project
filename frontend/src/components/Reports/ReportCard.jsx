@@ -8,7 +8,6 @@ import {
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import apiClient from '../../api/client';
 import ConfirmDialog from '../UI/ConfirmDialog';
 import {
   getStatusColor,
@@ -31,7 +30,7 @@ const ReportCard = ({ report, onEdit, onDelete, onStatusChange, adminMode = fals
   const isOwner = user && user.id === report.user_id;
   const isDraft = report.status === 'draft';
 
-  const canEdit = user?.is_admin || (isOwner && isDraft);
+  const canEdit = isOwner && isDraft;
   const canDelete = (user?.is_admin && adminMode) || (isOwner && isDraft);
   const canUpdateStatus = user?.is_admin && adminMode;
 
