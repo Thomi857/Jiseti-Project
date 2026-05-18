@@ -1,22 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useReports } from '../../hooks/useReports';
+import { useToast } from '../../contexts/ToastContext';
 import AdminReportCard from './AdminReportCard';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import Select from '../UI/Select';
 
 const AdminPanel = () => {
   const { reports, loading, error, updateReport } = useReports();
+  const { error: showError, success: showSuccess } = useToast();
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
   const { isAdmin } = useAuth();
 
+  useEffect(() => {
+    if (error) {
+      showError(error);
+    }
+  }, [error, showError]);
+
   const handleStatusUpdate = async (reportId, newStatus) => {
     try {
       await updateReport(reportId, { status: newStatus });
+      showSuccess('Report status updated successfully');
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to update status');
+      showError(error.response?.data?.error || 'Failed to update status');
     }
   };
 

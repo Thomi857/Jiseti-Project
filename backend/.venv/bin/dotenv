@@ -1,4 +1,4 @@
-#!/home/abdiirii/Jiseti-Project/backend/.venv/bin/python3
+#!/home/cliff/Documents/Jiseti-Project/backend/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -111,7 +111,8 @@ def init_db():
                     status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'under_investigation', 'rejected', 'resolved')),
                     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP NULL DEFAULT NULL
                 )
             ''')
             

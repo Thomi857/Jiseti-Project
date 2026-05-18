@@ -318,6 +318,7 @@ class Report:
                     SELECT r.*, u.username
                     FROM reports r
                     JOIN users u ON r.user_id = u.id
+                    WHERE r.deleted_at IS NULL
                     ORDER BY r.created_at DESC
                     """
                 )
@@ -340,7 +341,7 @@ class Report:
             return None
         try:
             with conn.cursor(row_factory=dict_row) as cur:
-                cur.execute("SELECT * FROM reports WHERE id = %s", (report_id,))
+                cur.execute("SELECT * FROM reports WHERE id = %s AND deleted_at IS NULL", (report_id,))
                 report = cur.fetchone()
                 if report:
                     logging.info(f"Report.get_by_id: Found report with ID: {report_id}.")
@@ -431,20 +432,23 @@ class Report:
 
     @staticmethod
     def delete(report_id):
-        logging.info(f"Report.delete: Attempting to delete report with ID: {report_id}")
+        logging.info(f"Report.delete: Attempting to soft-delete report with ID: {report_id}")
         conn = get_db_connection()
         if not conn:
             logging.error("Report.delete: Failed to get database connection.")
             return False
         try:
             with conn.cursor() as cur:
-                cur.execute("DELETE FROM reports WHERE id = %s", (report_id,))
+                cur.execute(
+                    "UPDATE reports SET deleted_at = CURRENT_TIMESTAMP WHERE id = %s AND deleted_at IS NULL",
+                    (report_id,)
+                )
                 deleted = cur.rowcount > 0
                 conn.commit()
                 if deleted:
-                    logging.info(f"Report.delete: Successfully deleted report with ID: {report_id}.")
+                    logging.info(f"Report.delete: Successfully soft-deleted report with ID: {report_id}.")
                 else:
-                    logging.warning(f"Report.delete: Report with ID: {report_id} not found for deletion.")
+                    logging.warning(f"Report.delete: Report with ID: {report_id} not found or already deleted.")
                 return deleted
         except Exception as e:
             logging.error(f"Report.delete: Error deleting report with ID {report_id}: {e}", exc_info=True)

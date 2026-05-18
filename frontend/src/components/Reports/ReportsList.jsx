@@ -1,37 +1,38 @@
-// ReportsList.jsx
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import ReportCard from './ReportCard';
 import ReportEditModal from './ReportEditModal';
 import { useReports } from '../../hooks/useReports';
+import { useToast } from '../../contexts/ToastContext';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import Select from '../UI/Select';
 
 const ReportsList = () => {
   const { reports, loading, error, updateReport, deleteReport } = useReports();
+  const { isAuthenticated, user, isAdmin } = useAuth();
+  const { error: showError } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedReport, setSelectedReport] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [adminMode, setAdminMode] = useState(false);
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const { isAuthenticated, user } = useAuth();
-
-  // REMOVE THE ADMIN CHECK HERE. Admins should see the list.
-  // Permissions for individual actions (edit/delete) will be handled in ReportCard.
+  // Get the "filter=mine" parameter from URL
+  const filterParam = searchParams.get('filter');
+  const showMyReports = filterParam === 'mine' && isAuthenticated;
 
   const handleEditReport = (report) => {
     setSelectedReport(report);
     setEditModalOpen(true);
   };
 
-  const handleDeleteReport = async (report) => {
-    // IMPORTANT: Replace window.confirm with a custom modal UI as per instructions
-    if (window.confirm('Are you sure you want to delete this report?')) {
-      try {
-        await deleteReport(report.id);
-      } catch (error) {
-        alert(error.response?.data?.error || 'Failed to delete report');
-      }
+  const handleDeleteReport = async (reportId) => {
+    try {
+      await deleteReport(reportId);
+    } catch (error) {
+      showError(error.response?.data?.error || 'Failed to delete report');
     }
   };
 
@@ -44,18 +45,21 @@ const ReportsList = () => {
     }
   };
 
-  const filteredReports = reports.filter(report => {
-    // If the user is an admin, show all reports regardless of owner
-    // Otherwise, show only reports owned by the current user
-    if (!user?.is_admin && isAuthenticated && report.user_id !== user?.id) {
-        return false;
+  const handleMyReportsToggle = (state) => {
+    if (state) {
+      setSearchParams({ filter: 'mine' });
+    } else {
+      setSearchParams({});
     }
+  };
 
+  // Filter reports based on status, type, and "my reports" toggle
+  const filteredReports = reports.filter(report => {
+    if (showMyReports && report.user_id !== user.id) return false;
     if (filter !== 'all' && report.status !== filter) return false;
     if (typeFilter !== 'all' && report.record_type !== typeFilter) return false;
     return true;
   });
-
 
   if (loading) {
     return (
@@ -83,10 +87,47 @@ const ReportsList = () => {
         </p>
       </div>
 
+      {/* Admin Mode Toggle */}
+      {isAdmin && (
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <label className="flex items-center space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={adminMode}
+              onChange={(e) => setAdminMode(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {adminMode ? 'Admin Mode: ON' : 'Admin Mode: OFF'}
+            </span>
+          </label>
+          {adminMode && (
+            <p className="text-xs text-blue-600 mt-2 ml-7">
+              Delete buttons and status controls are now visible on all cards.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
+            {/* My Reports Toggle */}
+            {isAuthenticated && (
+              <div className="flex items-center space-x-3">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showMyReports}
+                    onChange={(e) => handleMyReportsToggle(e.target.checked)}
+                    className="w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">My Reports</span>
+                </label>
+              </div>
+            )}
+
             <div>
               <Select
                 label="Status"
@@ -112,7 +153,7 @@ const ReportsList = () => {
               </Select>
             </div>
           </div>
-          
+
           <div className="text-sm text-gray-500">
             {filteredReports.length} of {reports.length} reports
           </div>
@@ -125,23 +166,50 @@ const ReportsList = () => {
           <div className="text-gray-500 mb-4">
             {reports.length === 0 ? 'No reports found' : 'No reports match your filters'}
           </div>
+          {/* CTA for logged-out users */}
           {!isAuthenticated && (
             <p className="text-sm text-gray-400">
-              Sign in to create your first report
+              <a href="/login" className="text-jisefi-green-dark font-medium hover:underline">Login to report</a>
+              {' or '}
+              <a href="/register" className="text-jisefi-green-dark font-medium hover:underline">sign up to contribute</a>
             </p>
           )}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredReports.map((report) => (
-            <ReportCard
-              key={report.id}
-              report={report}
-              onEdit={handleEditReport}
-              onDelete={handleDeleteReport}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredReports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                onEdit={handleEditReport}
+                onDelete={handleDeleteReport}
+                adminMode={adminMode}
+              />
+            ))}
+          </div>
+
+          {/* CTA for logged-out users shown below the feed */}
+          {!isAuthenticated && (
+            <div className="mt-10 text-center">
+              <p className="text-gray-500 mb-2">Want to report corruption or request intervention?</p>
+              <div className="flex justify-center gap-4">
+                <a
+                  href="/login"
+                  className="px-4 py-2 border border-jisefi-green-dark text-jisefi-green-dark rounded-lg text-sm font-semibold hover:bg-jisefi-green-dark hover:text-white transition-all duration-300"
+                >
+                  Login to report
+                </a>
+                <a
+                  href="/register"
+                  className="px-4 py-2 bg-jisefi-yellow-accent text-jisefi-green-dark rounded-lg text-sm font-semibold hover:bg-yellow-400 transition-all duration-300"
+                >
+                  Sign up to contribute
+                </a>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Edit Modal */}
@@ -149,7 +217,7 @@ const ReportsList = () => {
         <ReportEditModal
           report={selectedReport}
           onClose={() => setEditModalOpen(false)}
-          onUpdate={handleUpdateReport}
+          onUpdate={(updateData) => handleUpdateReport(selectedReport.id, updateData)}
         />
       )}
     </div>
@@ -157,79 +225,3 @@ const ReportsList = () => {
 };
 
 export default ReportsList;
-
-// // ReportsList.jsx
-// import React, { useState } from 'react';
-// import ReportCard from './ReportCard';
-// import Modal from '../UI/Modal';
-// import Button from '../UI/Button';
-// import apiClient from '../../api/client';
-
-// const ReportsList = ({ reports }) => {
-//   // State to manage the delete confirmation modal
-//   const [showDeleteModal, setShowDeleteModal] = useState(false);
-//   const [reportToDelete, setReportToDelete] = useState(null);
-//   const [isDeleting, setIsDeleting] = useState(false);
-//   const [error, setError] = useState('');
-
-//   // Function called by ReportCard to start the delete process
-//   const confirmDelete = (report) => {
-//     setReportToDelete(report);
-//     setShowDeleteModal(true);
-//   };
-
-//   // Function to perform the actual delete operation
-//   const handleDelete = async () => {
-//     if (!reportToDelete) return;
-
-//     setIsDeleting(true);
-//     setError('');
-
-//     try {
-//       await apiClient.deleteReport(reportToDelete.id);
-//       // You may need to trigger a data refresh here,
-//       // e.g., by refetching the reports list from the API.
-//       // This part is dependent on your parent component's logic.
-//     } catch (err) {
-//       setError('Failed to delete report. Please check your backend API.');
-//       console.error(err);
-//     } finally {
-//       setIsDeleting(false);
-//       setShowDeleteModal(false);
-//       setReportToDelete(null);
-//     }
-//   };
-
-//   if (!reports || reports.length === 0) {
-//     return <div className="text-center text-gray-500">No reports found.</div>;
-//   }
-
-//   return (
-//     <>
-//       {error && <div className="text-red-500 mb-4">{error}</div>}
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//         {reports.map((report) => (
-//           <ReportCard key={report.id} report={report} onDelete={confirmDelete} />
-//         ))}
-//       </div>
-//       <Modal
-//         isOpen={showDeleteModal}
-//         onClose={() => setShowDeleteModal(false)}
-//         title="Confirm Deletion"
-//       >
-//         <p>Are you sure you want to delete this report? This action cannot be undone.</p>
-//         {reportToDelete && <p className="mt-2 text-sm text-gray-500">You are about to delete: **{reportToDelete.title}**</p>}
-//         <div className="flex justify-end gap-2 mt-6">
-//           <Button onClick={() => setShowDeleteModal(false)} variant="outline">
-//             Cancel
-//           </Button>
-//           <Button onClick={handleDelete} variant="danger" loading={isDeleting}>
-//             Delete
-//           </Button>
-//         </div>
-//       </Modal>
-//     </>
-//   );
-// };
-
-// export default ReportsList;

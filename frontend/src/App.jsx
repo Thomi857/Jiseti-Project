@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ReportsList from './components/Reports/ReportsList';
@@ -28,31 +29,33 @@ function App() {
   return (
     <APIProvider apiKey={apiKey}>
       <AuthProvider>
-        <Router>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<ReportsList />} />
-              <Route path="/login" element={<LoginForm />} />
-              <Route path="/register" element={<RegisterForm />} />
-              <Route 
-                path="/create-report" 
-                element={
-                  <ProtectedRoute>
-                    <CreateReportForm />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute adminOnly={true}>
-                    <AdminPanel />
-                  </ProtectedRoute>
-                } 
-              />
-            </Routes>
-          </Layout>
-        </Router>
+        <ToastProvider>
+          <Router>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<ReportsList />} />
+                <Route path="/login" element={<LoginForm />} />
+                <Route path="/register" element={<RegisterForm />} />
+                <Route 
+                  path="/create-report" 
+                  element={
+                    <ProtectedRoute>
+                      <CreateReportForm />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/reports" 
+                  element={
+                    <ProtectedRoute adminOnly={true}>
+                      <AdminPanel />
+                    </ProtectedRoute>
+                  } 
+                />
+              </Routes>
+            </Layout>
+          </Router>
+        </ToastProvider>
       </AuthProvider>
     </APIProvider>
   );

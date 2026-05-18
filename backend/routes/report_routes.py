@@ -126,7 +126,7 @@ def delete_report(report_id):
         if not report:
             return jsonify({'error': 'Report not found'}), 404
 
-        if int(report['user_id']) != int(user_id):
+        if not can_delete_report(report, user_id):
             logging.warning(f"User {user_id} not authorized to delete report {report_id}")
             return jsonify({'error': 'Not authorized to delete this report'}), 403
 

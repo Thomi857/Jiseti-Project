@@ -243,7 +243,7 @@ const Header = () => {
 
                 {isAdmin && (
                   <Link
-                    to="/admin"
+                    to="/admin/reports"
                     // Text color changed to white, hover changed to jisefi-yellow-accent
                     className="text-white font-medium hover:text-jisefi-yellow-accent relative after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-0.5 after:bg-jisefi-yellow-accent after:transition-all after:duration-300 hover:after:w-full"
                   >
@@ -333,7 +333,7 @@ const Header = () => {
 
                   {isAdmin && (
                     <Link
-                      to="/admin"
+                      to="/admin/reports"
                       className="block px-3 py-2 text-base font-medium text-jisefi-dark-grey hover:bg-jisefi-off-white hover:text-jisefi-green-dark rounded-md transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
