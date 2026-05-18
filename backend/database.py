@@ -115,6 +115,10 @@ def init_db():
                     deleted_at TIMESTAMP NULL DEFAULT NULL
                 )
             ''')
+            cur.execute('''
+                ALTER TABLE reports
+                ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL DEFAULT NULL
+            ''')
             
             logging.info("init_db: Checking for existing 'admin' user.")
             cur.execute("SELECT id FROM users WHERE username = 'admin'")

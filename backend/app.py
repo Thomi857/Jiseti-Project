@@ -14,7 +14,15 @@ app = Flask(__name__, static_folder="../frontend/dist", template_folder="../fron
 app.config['JWT_SECRET_KEY'] = Config.JWT_SECRET_KEY
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = Config.JWT_ACCESS_TOKEN_EXPIRES
 jwt = JWTManager(app)
-CORS(app, resources={r"/api/*": {"origins": "https://jiseti-project.onrender.com"}})
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://jiseti-project.onrender.com",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ]
+    }
+})
 
 # Initialize DB at import time
 if not init_db():
