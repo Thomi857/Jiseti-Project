@@ -20,7 +20,7 @@ import {
 } from '../../utils/helpers';
 import ReportMap from './ReportMap';
 
-const ReportCard = ({ report, onEdit, onDelete, adminMode = false }) => {
+const ReportCard = ({ report, onEdit, onDelete, onStatusChange, adminMode = false }) => {
   const { user } = useAuth();
   const { error: showError } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -31,8 +31,9 @@ const ReportCard = ({ report, onEdit, onDelete, adminMode = false }) => {
   const isOwner = user && user.id === report.user_id;
   const isDraft = report.status === 'draft';
 
-  const canEdit = (user?.is_admin || (isOwner && isDraft)) && !adminMode;
+  const canEdit = user?.is_admin || (isOwner && isDraft);
   const canDelete = (user?.is_admin && adminMode) || (isOwner && isDraft);
+  const canUpdateStatus = user?.is_admin && adminMode;
 
   // For public feed (unauthenticated users), show limited information
   const isPublicFeed = !user;
@@ -44,6 +45,14 @@ const ReportCard = ({ report, onEdit, onDelete, adminMode = false }) => {
     } catch (error) {
       showError(error.response?.data?.error || 'Failed to delete report. Please try again.');
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await onStatusChange(report.id, { status: newStatus });
+    } catch (error) {
+      showError(error.response?.data?.error || 'Failed to update status.');
     }
   };
 
@@ -76,8 +85,21 @@ const ReportCard = ({ report, onEdit, onDelete, adminMode = false }) => {
               )}
             </div>
 
-            {(canEdit || canDelete) && (
+            {(canUpdateStatus || canEdit || canDelete) && (
               <div className="flex items-center space-x-2 ml-4">
+                {canUpdateStatus && (
+                  <select
+                    value={report.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    className="rounded-md border border-gray-300 bg-white text-sm px-2 py-1"
+                    title="Change report status"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="under_investigation">Under Investigation</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                )}
                 {canEdit && (
                   <button
                     onClick={() => onEdit(report)}

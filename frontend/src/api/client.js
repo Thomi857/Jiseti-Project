@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://jiseti-project.onrender.com/api';
+const API_BASE_URL = 'http://127.0.0.1:5000/api';
 
 class ApiClient {
   constructor() {

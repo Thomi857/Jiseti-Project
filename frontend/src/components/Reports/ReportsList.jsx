@@ -184,6 +184,7 @@ const ReportsList = () => {
                 report={report}
                 onEdit={handleEditReport}
                 onDelete={handleDeleteReport}
+                onStatusChange={handleUpdateReport}
                 adminMode={adminMode}
               />
             ))}
